@@ -39,8 +39,17 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
+        // --- CÓDIGO NUEVO PARA MÓVIL ---
+        // 1. Desbloquear FPS (Para que vaya a 60 o 120fps fluido)
+        Application.targetFrameRate = 60;
+
+        // 2. Evitar que la pantalla se apague si no tocas nada
+        Screen.sleepTimeout = SleepTimeout.NeverSleep;
+        // -------------------------------
+
         currentLevel = PlayerPrefs.GetInt("SelectedLevel", 1);
         UpdateUI();
+        Input.gyro.enabled = true; // Fuerza el encendido del giroscopio
         InitializeLevel();
     }
 
@@ -177,11 +186,17 @@ public class GameManager : MonoBehaviour
     }
 
 
-    public void BrickDestroyed()
+    public void BrickDestroyed(Vector3 brickPos)
     {
         AddScore(scorePerBrick);
-        bricksRemaining--;
 
+        // Pasamos la posición y la puntuación al ComboManager
+        if (ComboEffectManager.Instance != null)
+        {
+            ComboEffectManager.Instance.RegisterHit(brickPos, scorePerBrick);
+        }
+
+        bricksRemaining--;
         if (bricksRemaining <= 0) LevelCompleted();
     }
 
