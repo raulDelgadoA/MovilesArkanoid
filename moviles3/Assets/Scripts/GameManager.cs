@@ -1,0 +1,209 @@
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using TMPro;
+
+public class GameManager : MonoBehaviour
+{
+    public static GameManager Instance;
+
+    [Header("Game State")]
+    public int score = 0;
+    public int lives = 3;
+    public int currentLevel = 1;
+    public bool isGameOver = false;
+
+    [Header("Level Settings")]
+    public int scorePerBrick = 100;
+
+    [Header("UI References")]
+    public TextMeshProUGUI scoreText;
+    public TextMeshProUGUI livesText;
+    public GameObject gameOverPanel;
+    public TextMeshProUGUI finalScoreText;
+
+    [Header("Game Objects")]
+    public GameObject ballPrefab;
+    public Transform paddle;
+    public ProceduralLevelGenerator proceduralGenerator;
+
+    public GameObject safetyBarrier;
+
+    private GameObject currentBall;
+    private int bricksRemaining;
+
+    void Awake()
+    {
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
+    }
+
+    void Start()
+    {
+        currentLevel = PlayerPrefs.GetInt("SelectedLevel", 1);
+        UpdateUI();
+        InitializeLevel();
+    }
+
+    void Update()
+    {
+        // TRUCO DE DEBUG: Si pulsas 'R', reinicia el nivel al instante
+        // Solo funcionará en el editor de Unity, no en el móvil final
+        if (Application.isEditor && Input.GetKeyDown(KeyCode.R))
+        {
+            Debug.Log("Regenerando nivel...");
+            // Borramos bolas viejas
+            if (currentBall != null) Destroy(currentBall);
+
+            // Volvemos a inicializar todo (esto leerá tus casillas marcadas nuevas)
+            InitializeLevel();
+        }
+    }
+
+    void InitializeLevel()
+    {
+        isGameOver = false;
+
+        // 1. Aseguramos que la barrera esté apagada
+        if (safetyBarrier != null) safetyBarrier.SetActive(false);
+
+        // 2. Generamos el nivel (Con DestroyImmediate ya no habrá fantasmas)
+        if (proceduralGenerator != null)
+        {
+            proceduralGenerator.GenerateLevel(currentLevel);
+        }
+
+        // 3. Ahora sí contamos. Como usamos DestroyImmediate, la cuenta será exacta.
+        bricksRemaining = GameObject.FindGameObjectsWithTag("Brick").Length;
+
+        Debug.Log($"Nivel {currentLevel} iniciado. Ladrillos reales: {bricksRemaining}");
+
+        SpawnBall();
+    }
+
+    public void SpawnBall()
+    {
+        if (isGameOver) return;
+        if (currentBall != null) Destroy(currentBall);
+
+        Vector3 spawnPos = new Vector3(paddle.position.x, paddle.position.y, paddle.position.z + 0.8f);
+        currentBall = Instantiate(ballPrefab, spawnPos, Quaternion.identity);
+
+        BallController ballScript = currentBall.GetComponent<BallController>();
+        if (ballScript != null)
+        {
+            ballScript.gameManager = this;
+            ballScript.paddle = paddle;
+        }
+    }
+
+    // --- FUNCIÓN PARA BOLA EXTRA ---
+    public void SpawnExtraBall(Vector3 position)
+    {
+        GameObject extraBall = Instantiate(ballPrefab, position, Quaternion.identity);
+        BallController ballScript = extraBall.GetComponent<BallController>();
+        if (ballScript != null)
+        {
+            ballScript.gameManager = this;
+            ballScript.paddle = paddle;
+            Vector3 randomDir = new Vector3(Random.Range(-1f, 1f), 0, Random.Range(-1f, -0.2f)).normalized;
+            ballScript.LaunchImmediate(randomDir);
+        }
+    }
+
+    // --- FUNCIÓN DE LA BARRERA ---
+    public void ActivateSafetyNet(float duration)
+    {
+        // DEBUG: Comprobar si tenemos la barrera asignada
+        if (safetyBarrier == null)
+        {
+            Debug.LogError("¡ERROR! El GameManager intenta activar la barrera, pero la variable 'Safety Barrier' está vacía (None). Arrastra el cubo al Inspector.");
+            return;
+        }
+
+        safetyBarrier.SetActive(true);
+        Debug.Log($"Barrera ACTIVADA por {duration} segundos.");
+
+        CancelInvoke("DisableSafetyNet");
+        Invoke("DisableSafetyNet", duration);
+    }
+
+    void DisableSafetyNet()
+    {
+        if (safetyBarrier != null)
+        {
+            safetyBarrier.SetActive(false);
+            Debug.Log("Barrera desactivada.");
+        }
+    }
+
+    public void LoseLife()
+    {
+        lives--;
+        UpdateUI();
+
+        if (lives <= 0) GameOver();
+        else SpawnBall();
+    }
+
+    public void BrickDestroyed()
+    {
+        AddScore(scorePerBrick);
+        bricksRemaining--;
+
+        if (bricksRemaining <= 0) LevelCompleted();
+    }
+
+    void LevelCompleted()
+    {
+        isGameOver = true;
+        Debug.Log("¡NIVEL COMPLETADO!");
+
+        if (currentBall != null)
+        {
+            BallController ballScript = currentBall.GetComponent<BallController>();
+            if (ballScript != null) ballScript.StopBall();
+        }
+
+        // Guardamos progreso
+        PlayerPrefs.SetInt($"Level_{currentLevel}_Completed", 1);
+        PlayerPrefs.Save();
+
+        // CAMBIO: En vez de ir al Selector, vamos al siguiente nivel
+        Invoke("LoadNextLevel", 2f);
+    }
+
+    // Método para cargar el siguiente nivel infinito
+    void LoadNextLevel()
+    {
+        // Subimos el nivel
+        int nextLevel = currentLevel + 1;
+        PlayerPrefs.SetInt("SelectedLevel", nextLevel);
+
+        // Recargamos la MISMA escena (GameScene), pero como 'SelectedLevel' ha subido,
+        // el Generador creará un nivel más difícil.
+        SceneManager.LoadScene("LevelSelectorScene");
+    }
+
+    public void AddScore(int points)
+    {
+        score += points;
+        UpdateUI();
+    }
+
+    void UpdateUI()
+    {
+        if (scoreText != null) scoreText.text = $"PUNTOS: {score}";
+        if (livesText != null) livesText.text = $"VIDAS: {lives}";
+    }
+
+    void GameOver()
+    {
+        isGameOver = true;
+        if (gameOverPanel != null)
+        {
+            gameOverPanel.SetActive(true);
+            if (finalScoreText != null) finalScoreText.text = $"Puntuación: {score}";
+        }
+        if (currentBall != null) Destroy(currentBall);
+    }
+}
