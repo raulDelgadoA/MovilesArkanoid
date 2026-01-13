@@ -110,6 +110,46 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    public void OnBallFell(GameObject ballObj)
+    {
+        // 1. Destruimos la bola que ha tocado el suelo
+        Destroy(ballObj);
+
+        // 2. Contamos cuántas bolas hay AHORA MISMO en la escena.
+        // OJO: Como Destroy no es inmediato (ocurre al final del frame), 
+        // Unity todavía encontrará la bola que acabamos de mandar destruir.
+        // Por eso, si contamos 1 bola, significa que es la que se está muriendo -> Perder Vida.
+        // Si contamos 2 o más, significa que quedan otras vivas -> Seguimos jugando.
+
+        int ballsActive = GameObject.FindGameObjectsWithTag("Ball").Length;
+
+        if (ballsActive <= 1)
+        {
+            // Era la última bola
+            LoseLife();
+        }
+        else
+        {
+            Debug.Log($"Una bola cayó, pero quedan {ballsActive - 1} en juego.");
+        }
+    }
+
+    public void LoseLife()
+    {
+        lives--;
+        UpdateUI();
+
+        if (lives <= 0)
+        {
+            GameOver();
+        }
+        else
+        {
+            // Si perdemos vida, volvemos a sacar una bola nueva desde la raqueta
+            SpawnBall();
+        }
+    }
+
     // --- FUNCIÓN DE LA BARRERA ---
     public void ActivateSafetyNet(float duration)
     {
@@ -136,14 +176,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    public void LoseLife()
-    {
-        lives--;
-        UpdateUI();
-
-        if (lives <= 0) GameOver();
-        else SpawnBall();
-    }
 
     public void BrickDestroyed()
     {
