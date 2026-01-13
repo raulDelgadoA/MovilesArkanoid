@@ -7,8 +7,8 @@ public class DeathZone : MonoBehaviour
         // Si lo que entra es la bola
         if (other.CompareTag("Ball"))
         {
-            // Avisamos al GameManager
-            GameManager.Instance.LoseLife();
+
+            GameManager.Instance.OnBallFell(other.gameObject);
         }
     }
 }
