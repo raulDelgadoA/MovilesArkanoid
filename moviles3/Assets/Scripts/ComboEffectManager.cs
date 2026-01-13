@@ -11,6 +11,16 @@ public class ComboEffectManager : MonoBehaviour
     public Camera mainCamera;
     public GameObject floatingTextPrefab;
 
+    [Header("Audio Satisfactorio (Balatro Style)")]
+    public AudioClip hitSound;          // El "Click"
+    public AudioClip feverLoopSound;    // El sonido de fondo (Fuego/Energía)
+    [Range(0f, 1f)] public float soundVolume = 0.8f;
+    public float pitchStep = 0.1f;      // Cuánto sube el tono por cada golpe
+    public float maxPitch = 2.5f;       // Tope de agudo para que no rompa los tímpanos
+
+    private AudioSource sfxSource;      // Para los golpes
+    private AudioSource loopSource;     // Para el modo fiebre
+
     [Header("Configuración de Fiebre")]
     public int hitsToTriggerFever = 5;      // Cuántos ladrillos seguidos para activar
     public float comboResetTime = 1.5f;     // Tiempo antes de perder el combo
@@ -44,6 +54,17 @@ public class ComboEffectManager : MonoBehaviour
     {
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
+
+        // --- CREAR AUDIOSOURCES AUTOMÁTICAMENTE ---
+        // 1. Canal de Efectos (SFX)
+        sfxSource = gameObject.AddComponent<AudioSource>();
+        sfxSource.playOnAwake = false;
+
+        // 2. Canal de Loop (Fiebre)
+        loopSource = gameObject.AddComponent<AudioSource>();
+        loopSource.loop = true;
+        loopSource.playOnAwake = false;
+        loopSource.clip = feverLoopSound;
     }
 
     void Start()
@@ -85,7 +106,6 @@ public class ComboEffectManager : MonoBehaviour
         }
     }
 
-    // --- NUEVO: RECIBIMOS LA POSICIÓN ---
     public void RegisterHit(Vector3 position, int scoreAmount)
     {
         currentCombo++;
@@ -93,9 +113,43 @@ public class ComboEffectManager : MonoBehaviour
 
         if (currentCombo >= hitsToTriggerFever) isFeverMode = true;
 
-        // SPAWNEAR TEXTO
         SpawnFloatingText(position, scoreAmount);
         TriggerVibration();
+
+        // --- SONIDO CON PITCH ASCENDENTE ---
+        PlayComboSound();
+    }
+
+    // Llamar a esto cada vez que rompes un ladrillo
+    public void RegisterHit()
+    {
+        currentCombo++;
+        comboTimer = comboResetTime;
+
+        // Si superamos el umbral, activamos el modo FIEBRE
+        if (currentCombo >= hitsToTriggerFever)
+        {
+            isFeverMode = true;
+        }
+
+        // Pequeño sacudida extra con cada golpe (Golpe seco)
+        if (isFeverMode) AddShake(0.1f);
+    }
+
+    void PlayComboSound()
+    {
+        if (hitSound == null || sfxSource == null) return;
+
+        // 1. Calcular el tono (Pitch)
+        // Empieza en 1.0 y sube 0.1 por cada golpe
+        float newPitch = 1f + (currentCombo * pitchStep);
+
+        // Limitar para que no sea demasiado agudo (chiu chiu)
+        if (newPitch > maxPitch) newPitch = maxPitch;
+
+        // 2. Aplicar y tocar
+        sfxSource.pitch = newPitch;
+        sfxSource.PlayOneShot(hitSound, soundVolume);
     }
 
     void SpawnFloatingText(Vector3 pos, int score)
@@ -143,21 +197,7 @@ public class ComboEffectManager : MonoBehaviour
         }
     }
 
-    // Llamar a esto cada vez que rompes un ladrillo
-    public void RegisterHit()
-    {
-        currentCombo++;
-        comboTimer = comboResetTime;
-
-        // Si superamos el umbral, activamos el modo FIEBRE
-        if (currentCombo >= hitsToTriggerFever)
-        {
-            isFeverMode = true;
-        }
-
-        // Pequeño sacudida extra con cada golpe (Golpe seco)
-        if (isFeverMode) AddShake(0.1f);
-    }
+    
 
     // --- FUNCIÓN NUEVA PARA VIBRAR ---
     void TriggerVibration()
@@ -206,6 +246,20 @@ public class ComboEffectManager : MonoBehaviour
             // Nota: Esto es un efecto visual momentáneo
             mainCamera.transform.position += shakeOffset;
         }
+
+        // --- SONIDO LOOP FIEBRE ---
+        // Si entramos en fiebre y el sonido no está sonando, darle al Play
+        if (loopSource != null && feverLoopSound != null && !loopSource.isPlaying)
+        {
+            loopSource.volume = 0; // Empezar en silencio para hacer fade in
+            loopSource.Play();
+        }
+
+        // Fade In (Subir volumen suavemente)
+        if (loopSource != null && loopSource.isPlaying)
+        {
+            loopSource.volume = Mathf.Lerp(loopSource.volume, soundVolume * 0.6f, Time.deltaTime * 5f);
+        }
     }
 
     void HandleNormalReturn()
@@ -220,6 +274,16 @@ public class ComboEffectManager : MonoBehaviour
         if (chromAb != null)
         {
             chromAb.intensity.value = Mathf.Lerp(chromAb.intensity.value, 0f, Time.deltaTime * 2f);
+        }
+
+        // --- PARAR SONIDO FIEBRE ---
+        if (loopSource != null && loopSource.isPlaying)
+        {
+            // Fade Out (Bajar volumen suavemente)
+            loopSource.volume = Mathf.Lerp(loopSource.volume, 0f, Time.deltaTime * 5f);
+
+            // Si ya casi no se oye, lo paramos del todo
+            if (loopSource.volume < 0.01f) loopSource.Stop();
         }
 
         // El shake se detiene solo porque dejamos de sumar el offset aleatorio

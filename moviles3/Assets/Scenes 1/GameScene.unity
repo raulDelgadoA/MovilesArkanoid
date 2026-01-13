@@ -2947,7 +2947,7 @@ MonoBehaviour:
   paddingZ: 0.2
   startZ: 6
   chanceForPowerUp: 0.2
-  forceExtraBall: 0
+  forceExtraBall: 1
   forceSpeedUp: 0
   forceSlowDown: 0
   forceSafetyNet: 0
@@ -3584,6 +3584,11 @@ MonoBehaviour:
   globalVolume: {fileID: 1436860581}
   mainCamera: {fileID: 330585545}
   floatingTextPrefab: {fileID: 8560951656023210589, guid: 040f54a69abaf0a4eab995b56adaf52a, type: 3}
+  hitSound: {fileID: 8300000, guid: 6e60000e37757f444ac9ae05ec155e6c, type: 3}
+  feverLoopSound: {fileID: 8300000, guid: cc9194e86f4165549a3d7d04f48c5724, type: 3}
+  soundVolume: 0.8
+  pitchStep: 0.1
+  maxPitch: 2.5
   hitsToTriggerFever: 4
   comboResetTime: 1.5
   hueSpeed: 100
