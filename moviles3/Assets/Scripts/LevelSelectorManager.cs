@@ -109,7 +109,7 @@ public class LevelSelectorManager : MonoBehaviour
         if (levelInfoText != null)
         {
             int highScore = PlayerPrefs.GetInt($"Level_{level}_HighScore", 0);
-            levelInfoText.text = $"Nivel {level}\nPuntuación máxima: {highScore}";
+            levelInfoText.text = $"Nivel {level}\nRecord: {highScore}";
         }
     }
 
