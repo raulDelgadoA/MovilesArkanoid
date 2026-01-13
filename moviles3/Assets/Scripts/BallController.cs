@@ -158,7 +158,12 @@ public class BallController : MonoBehaviour
                 ActivatePowerUp(brick.currentPowerUp, collision.transform.position);
             }
 
-            if (gameManager != null) gameManager.BrickDestroyed();
+            if (gameManager != null)
+            {
+                // CAMBIO: Pasamos la posición del ladrillo
+                gameManager.BrickDestroyed(collision.transform.position);
+            }
+
             Destroy(collision.gameObject);
         }
     }
