@@ -1,117 +1,97 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using TMPro;
 
 public class OptionsManager : MonoBehaviour
 {
+    public static OptionsManager Instance;
+
     [Header("UI References")]
     public Slider soundSlider;
     public Slider musicSlider;
     public Slider sensitivitySlider;
     public Toggle vibrationToggle;
+
+    [Header("Buttons")]
     public Button applyButton;
     public Button backButton;
     public Button resetButton;
 
     [Header("Default Values")]
-    public float defaultSoundVolume = 0.8f;
-    public float defaultMusicVolume = 0.6f;
-    public float defaultSensitivity = 1.0f;
-    public bool defaultVibration = true;
+    public float defaultSFX = 1.0f;
+    public float defaultMusic = 0.5f;
+    public float defaultSens = 1.0f;
+    public bool defaultVib = true;
+
+    // Variables públicas para el juego
+    public float CurrentSensitivity { get; private set; }
+    public bool VibrationEnabled { get; private set; }
+
+    private void Awake()
+    {
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
+    }
 
     void Start()
     {
-        // Cargar valores guardados
         LoadSettings();
 
-        // Configurar botones
-        if (applyButton != null)
-            applyButton.onClick.AddListener(OnApplyButtonClick);
+        // Listeners de UI
+        if (applyButton) applyButton.onClick.AddListener(SaveSettings);
+        if (backButton) backButton.onClick.AddListener(() => SceneManager.LoadScene("MainMenuScene"));
+        if (resetButton) resetButton.onClick.AddListener(OnResetButtonClick);
 
-        if (backButton != null)
-            backButton.onClick.AddListener(OnBackButtonClick);
+        if (soundSlider) soundSlider.onValueChanged.AddListener((v) => {
+            if (AudioManager.Instance) AudioManager.Instance.SetSFXVolume(v);
+        });
 
-        if (resetButton != null)
-            resetButton.onClick.AddListener(OnResetButtonClick);
+        if (musicSlider) musicSlider.onValueChanged.AddListener((v) => {
+            if (AudioManager.Instance) AudioManager.Instance.SetMusicVolume(v);
+        });
 
-        // Actualizar UI cuando cambian los sliders
-        if (soundSlider != null)
-            soundSlider.onValueChanged.AddListener(OnSoundChanged);
-
-        if (musicSlider != null)
-            musicSlider.onValueChanged.AddListener(OnMusicChanged);
+        if (sensitivitySlider) sensitivitySlider.onValueChanged.AddListener((v) => CurrentSensitivity = v);
+        if (vibrationToggle) vibrationToggle.onValueChanged.AddListener((v) => VibrationEnabled = v);
     }
 
     void LoadSettings()
     {
-        soundSlider.value = PlayerPrefs.GetFloat("SoundVolume", defaultSoundVolume);
-        musicSlider.value = PlayerPrefs.GetFloat("MusicVolume", defaultMusicVolume);
-        sensitivitySlider.value = PlayerPrefs.GetFloat("Sensitivity", defaultSensitivity);
-        vibrationToggle.isOn = PlayerPrefs.GetInt("VibrationEnabled", defaultVibration ? 1 : 0) == 1;
+        // Cargar valores
+        float sfx = PlayerPrefs.GetFloat("SFXVolume", defaultSFX);
+        float music = PlayerPrefs.GetFloat("MusicVolume", defaultMusic);
+        CurrentSensitivity = PlayerPrefs.GetFloat("Sensitivity", defaultSens);
+        VibrationEnabled = PlayerPrefs.GetInt("VibrationEnabled", defaultVib ? 1 : 0) == 1;
+
+        // Actualizar UI
+        if (soundSlider) soundSlider.value = sfx;
+        if (musicSlider) musicSlider.value = music;
+        if (sensitivitySlider) sensitivitySlider.value = CurrentSensitivity;
+        if (vibrationToggle) vibrationToggle.isOn = VibrationEnabled;
+
+        // Sincronizar Audio Manager
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.SetSFXVolume(sfx);
+            AudioManager.Instance.SetMusicVolume(music);
+        }
     }
 
-    void SaveSettings()
+    public void SaveSettings()
     {
-        PlayerPrefs.SetFloat("SoundVolume", soundSlider.value);
+        PlayerPrefs.SetFloat("SFXVolume", soundSlider.value);
         PlayerPrefs.SetFloat("MusicVolume", musicSlider.value);
         PlayerPrefs.SetFloat("Sensitivity", sensitivitySlider.value);
         PlayerPrefs.SetInt("VibrationEnabled", vibrationToggle.isOn ? 1 : 0);
-
         PlayerPrefs.Save();
-    }
-
-    void OnApplyButtonClick()
-    {
-        SaveSettings();
-        ApplySettingsImmediately();
-
-        // Mostrar feedback visual (puedes añadir un texto de "Guardado!")
-        Debug.Log("Configuración guardada");
-    }
-
-    void OnBackButtonClick()
-    {
-        SceneManager.LoadScene("MainMenuScene");
+        Debug.Log("Guardado");
     }
 
     void OnResetButtonClick()
     {
-        // Resetear a valores por defecto
-        soundSlider.value = defaultSoundVolume;
-        musicSlider.value = defaultMusicVolume;
-        sensitivitySlider.value = defaultSensitivity;
-        vibrationToggle.isOn = defaultVibration;
-
+        soundSlider.value = defaultSFX;
+        musicSlider.value = defaultMusic;
+        sensitivitySlider.value = defaultSens;
+        vibrationToggle.isOn = defaultVib;
         SaveSettings();
-        ApplySettingsImmediately();
-    }
-
-    void ApplySettingsImmediately()
-    {
-        // Aplicar volumen de sonido
-        AudioListener.volume = soundSlider.value;
-
-        // Notificar otros sistemas que la configuración cambió
-        // (Por ejemplo, música de fondo)
-    }
-
-    void OnSoundChanged(float value)
-    {
-        // Cambiar volumen en tiempo real
-        AudioListener.volume = value;
-    }
-
-    void OnMusicChanged(float value)
-    {
-        // Cambiar volumen de música en tiempo real
-        // Buscar AudioSource de música y ajustar
-        GameObject musicPlayer = GameObject.FindGameObjectWithTag("MusicPlayer");
-        if (musicPlayer != null)
-        {
-            AudioSource musicSource = musicPlayer.GetComponent<AudioSource>();
-            if (musicSource != null)
-                musicSource.volume = value;
-        }
     }
 }
