@@ -19,6 +19,7 @@ public class GameManager : MonoBehaviour
     public TextMeshProUGUI scoreText;
     public TextMeshProUGUI livesText;
     public GameObject gameOverPanel;
+    public GameObject pausePanel;
     public TextMeshProUGUI finalScoreText;
 
     [Header("Game Objects")]
@@ -239,8 +240,8 @@ public class GameManager : MonoBehaviour
 
     void UpdateUI()
     {
-        if (scoreText != null) scoreText.text = $"PUNTOS: {score}";
-        if (livesText != null) livesText.text = $"VIDAS: {lives}";
+        if (scoreText != null) scoreText.text = $"SCORE: {score}";
+        if (livesText != null) livesText.text = $"LIVES: {lives}";
     }
 
     void GameOver()
@@ -249,8 +250,42 @@ public class GameManager : MonoBehaviour
         if (gameOverPanel != null)
         {
             gameOverPanel.SetActive(true);
-            if (finalScoreText != null) finalScoreText.text = $"Puntuación: {score}";
+            if (finalScoreText != null) finalScoreText.text = $"Score: {score}";
         }
         if (currentBall != null) Destroy(currentBall);
+    }
+
+    public void OnRestartButtonClick()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    public void OnMenuButtonClick()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene("MainMenuScene");
+    }
+
+    public void OnPauseButtonClick()
+    {
+        if (isGameOver) return;
+
+        if (pausePanel != null)
+        {
+            pausePanel.SetActive(true);
+        }
+
+        Time.timeScale = 0f;
+    }
+
+    public void OnResumeButtonClick()
+    {
+        if (pausePanel != null)
+        {
+            pausePanel.SetActive(false);
+        }
+
+        Time.timeScale = 1f;
     }
 }
