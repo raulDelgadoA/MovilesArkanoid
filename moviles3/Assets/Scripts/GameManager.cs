@@ -21,7 +21,9 @@ public class GameManager : MonoBehaviour
     public GameObject gameOverPanel;
     public GameObject pausePanel;
     public GameObject winPanel;
+    public TextMeshProUGUI levelText;
     public TextMeshProUGUI finalScoreText;
+    public TextMeshProUGUI winScoreText;
 
     [Header("Game Objects")]
     public GameObject ballPrefab;
@@ -221,8 +223,8 @@ public class GameManager : MonoBehaviour
         {
             winPanel.SetActive(true);
 
-            if (finalScoreText != null)
-                finalScoreText.text = $"Score: {score}";
+            if (winScoreText != null)
+                winScoreText.text = $"Score: {score}";
         }
     }
 
@@ -246,6 +248,7 @@ public class GameManager : MonoBehaviour
     {
         if (scoreText != null) scoreText.text = $"SCORE: {score}";
         if (livesText != null) livesText.text = $"LIVES: {lives}";
+        if (levelText != null) levelText.text = $"LEVEL: {currentLevel}";
     }
 
     void GameOver()

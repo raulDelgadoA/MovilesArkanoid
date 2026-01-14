@@ -893,7 +893,9 @@ MonoBehaviour:
   gameOverPanel: {fileID: 39653098}
   pausePanel: {fileID: 116964277}
   winPanel: {fileID: 1720696092}
+  levelText: {fileID: 1074973789}
   finalScoreText: {fileID: 474464341}
+  winScoreText: {fileID: 397620328}
   ballPrefab: {fileID: 950723642723049092, guid: 8125ad702bcee494d9957fdc7986cc7d, type: 3}
   paddle: {fileID: 1804276946}
   proceduralGenerator: {fileID: 1102898204}
@@ -1523,7 +1525,7 @@ GameObject:
   - component: {fileID: 397620329}
   - component: {fileID: 397620328}
   m_Layer: 5
-  m_Name: FinalScoretext
+  m_Name: WinScoretext
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3107,8 +3109,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
-  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
+    rgba: 4278242815
+  m_fontColor: {r: 1, g: 0.80347985, b: 0, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
