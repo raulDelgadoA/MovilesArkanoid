@@ -12,26 +12,18 @@ public class CountdownManager : MonoBehaviour
 
     [Header("Countdown Settings")]
     public float countdownDuration = 3f;
-    public AudioClip countdownSound;
-    public AudioClip goSound;
+    public AudioClip countdownSound; // Arrastra aquí el sonido "3, 2, 1"
+    public AudioClip goSound;        // Arrastra aquí el sonido "GO!"
 
     [Header("Game References")]
     public GameObject ball;
     public BallController ballController;
     public PaddleController paddleController;
 
-    private AudioSource audioSource;
-    private GameManager gameManager;
+    // Ya no necesitamos audioSource ni gameManager aquí para el sonido
 
     void Start()
     {
-        // Obtener referencias
-        audioSource = GetComponent<AudioSource>();
-        if (audioSource == null)
-            audioSource = gameObject.AddComponent<AudioSource>();
-
-        gameManager = FindObjectOfType<GameManager>();
-
         // Iniciar countdown
         StartCoroutine(StartCountdown());
     }
@@ -39,19 +31,14 @@ public class CountdownManager : MonoBehaviour
     IEnumerator StartCountdown()
     {
         // Ocultar UI de juego
-        if (gameUI != null)
-            gameUI.SetActive(false);
+        if (gameUI != null) gameUI.SetActive(false);
 
         // Desactivar controles
-        if (paddleController != null)
-            paddleController.enabled = false;
-
-        if (ballController != null)
-            ballController.enabled = false;
+        if (paddleController != null) paddleController.enabled = false;
+        if (ballController != null) ballController.enabled = false;
 
         // Activar panel de countdown
-        if (countdownPanel != null)
-            countdownPanel.SetActive(true);
+        if (countdownPanel != null) countdownPanel.SetActive(true);
 
         // Countdown: 3, 2, 1
         for (int i = (int)countdownDuration; i > 0; i--)
@@ -65,9 +52,11 @@ public class CountdownManager : MonoBehaviour
                 StartCoroutine(ScaleText(countdownText.transform, 1.5f, 0.2f));
             }
 
-            // Sonido
-            if (audioSource != null && countdownSound != null)
-                audioSource.PlayOneShot(countdownSound);
+            // --- CAMBIO: Usar AudioManager ---
+            if (AudioManager.Instance != null && countdownSound != null)
+            {
+                AudioManager.Instance.PlaySFX(countdownSound);
+            }
 
             yield return new WaitForSeconds(1f);
         }
@@ -80,26 +69,23 @@ public class CountdownManager : MonoBehaviour
             StartCoroutine(ScaleText(countdownText.transform, 1.8f, 0.3f));
         }
 
-        // Sonido GO
-        if (audioSource != null && goSound != null)
-            audioSource.PlayOneShot(goSound);
+        // --- CAMBIO: Usar AudioManager para el GO ---
+        if (AudioManager.Instance != null && goSound != null)
+        {
+            AudioManager.Instance.PlaySFX(goSound);
+        }
 
         yield return new WaitForSeconds(0.5f);
 
         // Desactivar panel de countdown
-        if (countdownPanel != null)
-            countdownPanel.SetActive(false);
+        if (countdownPanel != null) countdownPanel.SetActive(false);
 
         // Activar UI de juego
-        if (gameUI != null)
-            gameUI.SetActive(true);
+        if (gameUI != null) gameUI.SetActive(true);
 
         // Activar controles
-        if (paddleController != null)
-            paddleController.enabled = true;
-
-        if (ballController != null)
-            ballController.enabled = true;
+        if (paddleController != null) paddleController.enabled = true;
+        if (ballController != null) ballController.enabled = true;
 
         // Lanzar la bola
         LaunchBall();
@@ -109,16 +95,16 @@ public class CountdownManager : MonoBehaviour
     {
         if (ball != null)
         {
-            Rigidbody rb = ball.GetComponent<Rigidbody>();
+            Rigidbody2D rb = ball.GetComponent<Rigidbody2D>(); // Ojo: Si es 2D usa Rigidbody2D, si es 3D Rigidbody
             if (rb != null)
             {
                 // Dirección aleatoria hacia arriba
-                Vector3 direction = new Vector3(
+                Vector2 direction = new Vector2(
                     Random.Range(-0.5f, 0.5f),
-                    1f,
-                    0f
+                    1f
                 ).normalized;
 
+                // Nota: linearVelocity es de Unity 6/Preview, si usas versiones anteriores usa .velocity
                 rb.linearVelocity = direction * 5f;
             }
         }
@@ -149,7 +135,6 @@ public class CountdownManager : MonoBehaviour
         textTransform.localScale = originalScale;
     }
 
-    // Para reiniciar countdown (cuando pierdes una vida)
     public void RestartCountdown()
     {
         StartCoroutine(StartCountdown());
