@@ -1073,6 +1073,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 390541327}
+  - component: {fileID: 390541329}
   - component: {fileID: 390541328}
   m_Layer: 5
   m_Name: VibrationToggle
@@ -1149,6 +1150,18 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_IsOn: 1
+--- !u!114 &390541329
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 390541326}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 17d6c6ea92833144294345cedcfba697, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &417706906
 GameObject:
   m_ObjectHideFlags: 0
@@ -3557,6 +3570,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1830877698}
+  - component: {fileID: 1830877700}
   - component: {fileID: 1830877699}
   m_Layer: 5
   m_Name: GyroscopeToggle
@@ -3633,6 +3647,18 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_IsOn: 1
+--- !u!114 &1830877700
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1830877697}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 17d6c6ea92833144294345cedcfba697, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1878045726
 GameObject:
   m_ObjectHideFlags: 0
@@ -3642,6 +3668,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1878045727}
+  - component: {fileID: 1878045731}
   - component: {fileID: 1878045730}
   - component: {fileID: 1878045729}
   - component: {fileID: 1878045728}
@@ -3754,6 +3781,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1878045726}
   m_CullTransparentMesh: 1
+--- !u!114 &1878045731
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1878045726}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4816195860747e54b98855bbcdc18d9b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1977096862
 GameObject:
   m_ObjectHideFlags: 0
