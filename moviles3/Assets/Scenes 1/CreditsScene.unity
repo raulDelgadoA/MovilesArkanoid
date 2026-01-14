@@ -1757,7 +1757,6 @@ MonoBehaviour:
   floatingTextPrefab: {fileID: 8560951656023210589, guid: 040f54a69abaf0a4eab995b56adaf52a, type: 3}
   hitSound: {fileID: 8300000, guid: 6e60000e37757f444ac9ae05ec155e6c, type: 3}
   feverLoopSound: {fileID: 8300000, guid: cc9194e86f4165549a3d7d04f48c5724, type: 3}
-  soundVolume: 0.8
   pitchStep: 0.1
   maxPitch: 2.5
   hitsToTriggerFever: 4
@@ -2165,6 +2164,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1501824647}
+  - component: {fileID: 1501824651}
   - component: {fileID: 1501824650}
   - component: {fileID: 1501824649}
   - component: {fileID: 1501824648}
@@ -2277,6 +2277,18 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1501824646}
   m_CullTransparentMesh: 1
+--- !u!114 &1501824651
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1501824646}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4816195860747e54b98855bbcdc18d9b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1501922093
 GameObject:
   m_ObjectHideFlags: 0
