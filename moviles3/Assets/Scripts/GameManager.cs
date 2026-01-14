@@ -20,6 +20,7 @@ public class GameManager : MonoBehaviour
     public TextMeshProUGUI livesText;
     public GameObject gameOverPanel;
     public GameObject pausePanel;
+    public GameObject winPanel;
     public TextMeshProUGUI finalScoreText;
 
     [Header("Game Objects")]
@@ -216,20 +217,23 @@ public class GameManager : MonoBehaviour
         PlayerPrefs.SetInt($"Level_{currentLevel}_Completed", 1);
         PlayerPrefs.Save();
 
-        // CAMBIO: En vez de ir al Selector, vamos al siguiente nivel
-        Invoke("LoadNextLevel", 2f);
+        if (winPanel != null)
+        {
+            winPanel.SetActive(true);
+
+            if (finalScoreText != null)
+                finalScoreText.text = $"Score: {score}";
+        }
     }
 
     // Método para cargar el siguiente nivel infinito
-    void LoadNextLevel()
+    public void LoadNextLevel()
     {
         // Subimos el nivel
         int nextLevel = currentLevel + 1;
         PlayerPrefs.SetInt("SelectedLevel", nextLevel);
 
-        // Recargamos la MISMA escena (GameScene), pero como 'SelectedLevel' ha subido,
-        // el Generador creará un nivel más difícil.
-        SceneManager.LoadScene("LevelSelectorScene");
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     public void AddScore(int points)
@@ -287,5 +291,11 @@ public class GameManager : MonoBehaviour
         }
 
         Time.timeScale = 1f;
+    }
+
+    public void OnSelectButtonClick()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene("LevelSelectorScene");
     }
 }

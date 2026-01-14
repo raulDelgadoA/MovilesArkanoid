@@ -1,6 +1,6 @@
 using UnityEngine;
 using UnityEngine.Rendering;
-using UnityEngine.Rendering.Universal; // Necesario para URP (Universal Render Pipeline)
+using UnityEngine.Rendering.Universal;
 
 public class ComboEffectManager : MonoBehaviour
 {
@@ -11,30 +11,29 @@ public class ComboEffectManager : MonoBehaviour
     public Camera mainCamera;
     public GameObject floatingTextPrefab;
 
-    [Header("Audio Satisfactorio (Balatro Style)")]
-    public AudioClip hitSound;          // El "Click"
-    public AudioClip feverLoopSound;    // El sonido de fondo (Fuego/Energía)
-    [Range(0f, 1f)] public float soundVolume = 0.8f;
-    public float pitchStep = 0.1f;      // Cuánto sube el tono por cada golpe
-    public float maxPitch = 2.5f;       // Tope de agudo para que no rompa los tímpanos
+    [Header("Audio Satisfactorio")]
+    public AudioClip hitSound;
+    public AudioClip feverLoopSound;
+    public float pitchStep = 0.1f;
+    public float maxPitch = 2.5f;
 
-    private AudioSource sfxSource;      // Para los golpes
-    private AudioSource loopSource;     // Para el modo fiebre
+    // NOTA: Hemos quitado sfxSource porque usaremos el del Manager
+    private AudioSource loopSource;     // Mantenemos este para el loop de fondo
 
     [Header("Configuración de Fiebre")]
-    public int hitsToTriggerFever = 5;      // Cuántos ladrillos seguidos para activar
-    public float comboResetTime = 1.5f;     // Tiempo antes de perder el combo
-    public float hueSpeed = 150f;           // Velocidad del cambio de color
-    public float shakeIntensity = 0.2f;     // Cuánto tiembla la pantalla
+    public int hitsToTriggerFever = 5;
+    public float comboResetTime = 1.5f;
+    public float hueSpeed = 150f;
+    public float shakeIntensity = 0.2f;
 
-    [Header("Configuración Texto Balatro")]
-    public float maxTextScale = 10f; // Tamaño máximo
-    public float scalePerHit = 0.5f;  // Cuánto crece por cada golpe extra
+    [Header("Configuración Texto")]
+    public float maxTextScale = 10f;
+    public float scalePerHit = 0.5f;
 
-    [Header("Configuración de Vibración (Haptics)")]
-    public long baseVibration = 20;     // Vibración inicial (muy suave, un 'tick')
-    public long vibrationStep = 10;     // Cuánto sube por cada golpe
-    public long maxVibration = 80;      // Tope máximo (para no molestar)
+    [Header("Configuración de Vibración")]
+    public long baseVibration = 20;
+    public long vibrationStep = 10;
+    public long maxVibration = 80;
 
     [Header("Estado (Solo lectura)")]
     public int currentCombo = 0;
@@ -42,12 +41,9 @@ public class ComboEffectManager : MonoBehaviour
 
     // Variables internas
     private ColorAdjustments colorAdj;
-    private ChromaticAberration chromAb; // Opcional: efecto glitch
+    private ChromaticAberration chromAb;
     private float comboTimer;
     private float currentHue = 0;
-    private Vector3 originalCamPos;
-
-    // Referencia al efecto Gyro para no pelearse con él
     private CameraGyroEffect gyroScript;
 
     void Awake()
@@ -55,12 +51,8 @@ public class ComboEffectManager : MonoBehaviour
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
 
-        // --- CREAR AUDIOSOURCES AUTOMÁTICAMENTE ---
-        // 1. Canal de Efectos (SFX)
-        sfxSource = gameObject.AddComponent<AudioSource>();
-        sfxSource.playOnAwake = false;
-
-        // 2. Canal de Loop (Fiebre)
+        // --- SOLO CREAMOS EL LOOP SOURCE ---
+        // El de efectos (hits) ya no hace falta crearlo, usamos el AudioManager central
         loopSource = gameObject.AddComponent<AudioSource>();
         loopSource.loop = true;
         loopSource.playOnAwake = false;
@@ -69,7 +61,6 @@ public class ComboEffectManager : MonoBehaviour
 
     void Start()
     {
-        // Obtener los efectos del volumen
         if (globalVolume != null && globalVolume.profile != null)
         {
             globalVolume.profile.TryGet(out colorAdj);
@@ -84,18 +75,17 @@ public class ComboEffectManager : MonoBehaviour
 
     void Update()
     {
-        // 1. Lógica del temporizador de combo
+        // 1. Lógica del temporizador
         if (comboTimer > 0)
         {
             comboTimer -= Time.deltaTime;
         }
         else if (currentCombo > 0)
         {
-            // Se acabó el tiempo, reseteamos combo
             ResetCombo();
         }
 
-        // 2. EFECTOS VISUALES
+        // 2. EFECTOS VISUALES Y AUDIO LOOP
         if (isFeverMode)
         {
             HandleFeverEffects();
@@ -120,36 +110,72 @@ public class ComboEffectManager : MonoBehaviour
         PlayComboSound();
     }
 
-    // Llamar a esto cada vez que rompes un ladrillo
-    public void RegisterHit()
-    {
-        currentCombo++;
-        comboTimer = comboResetTime;
-
-        // Si superamos el umbral, activamos el modo FIEBRE
-        if (currentCombo >= hitsToTriggerFever)
-        {
-            isFeverMode = true;
-        }
-
-        // Pequeño sacudida extra con cada golpe (Golpe seco)
-        if (isFeverMode) AddShake(0.1f);
-    }
-
     void PlayComboSound()
     {
-        if (hitSound == null || sfxSource == null) return;
+        if (hitSound == null) return;
 
         // 1. Calcular el tono (Pitch)
-        // Empieza en 1.0 y sube 0.1 por cada golpe
         float newPitch = 1f + (currentCombo * pitchStep);
-
-        // Limitar para que no sea demasiado agudo (chiu chiu)
         if (newPitch > maxPitch) newPitch = maxPitch;
 
-        // 2. Aplicar y tocar
-        sfxSource.pitch = newPitch;
-        sfxSource.PlayOneShot(hitSound, soundVolume);
+        // 2. USAR EL AUDIOMANAGER (Para que respete el volumen de opciones)
+        // El método PlaySFX del manager ya gestiona el volumen por nosotros
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlaySFX(hitSound, newPitch);
+        }
+    }
+
+    void HandleFeverEffects()
+    {
+        // Efectos Visuales (Igual que antes) ...
+        if (colorAdj != null)
+        {
+            currentHue += hueSpeed * Time.deltaTime;
+            if (currentHue > 180) currentHue = -180;
+            colorAdj.hueShift.value = currentHue;
+        }
+        if (chromAb != null) chromAb.intensity.value = Mathf.Lerp(chromAb.intensity.value, 1f, Time.deltaTime * 5f);
+        if (mainCamera != null) mainCamera.transform.position += Random.insideUnitSphere * shakeIntensity;
+
+
+        // --- SONIDO LOOP FIEBRE ---
+        // AQUI ESTA LA MAGIA: Leemos el volumen actual del AudioManager
+        float volumenObjetivo = 0.5f; // Volumen base deseado para el loop (no muy alto)
+
+        if (AudioManager.Instance != null && AudioManager.Instance.sfxSource != null)
+        {
+            // Multiplicamos por el volumen global. 
+            // Si el slider está al 0, esto será 0. Si está al 1, será 0.5f.
+            volumenObjetivo *= AudioManager.Instance.sfxSource.volume;
+        }
+
+        if (loopSource != null && feverLoopSound != null)
+        {
+            if (!loopSource.isPlaying)
+            {
+                loopSource.volume = 0;
+                loopSource.Play();
+            }
+
+            // Fade In hacia el volumen objetivo (que ahora respeta el slider)
+            loopSource.volume = Mathf.Lerp(loopSource.volume, volumenObjetivo, Time.deltaTime * 5f);
+        }
+    }
+
+    void HandleNormalReturn()
+    {
+        // Volver a normalidad visual...
+        if (colorAdj != null) colorAdj.hueShift.value = Mathf.Lerp(colorAdj.hueShift.value, 0f, Time.deltaTime * 2f);
+        if (chromAb != null) chromAb.intensity.value = Mathf.Lerp(chromAb.intensity.value, 0f, Time.deltaTime * 2f);
+
+        // --- PARAR SONIDO FIEBRE ---
+        if (loopSource != null && loopSource.isPlaying)
+        {
+            // Fade Out a 0
+            loopSource.volume = Mathf.Lerp(loopSource.volume, 0f, Time.deltaTime * 5f);
+            if (loopSource.volume < 0.01f) loopSource.Stop();
+        }
     }
 
     void SpawnFloatingText(Vector3 pos, int score)
@@ -157,38 +183,24 @@ public class ComboEffectManager : MonoBehaviour
         if (floatingTextPrefab == null) return;
 
         Vector3 spawnPos;
-        // Rotación base mirando al cielo
         Quaternion rotation = Quaternion.Euler(90, 0, 0);
 
         if (isFeverMode)
         {
-            // MODO ÉPICO: CENTRO + CAOS
-            Vector3 centerScreen = new Vector3(0, 4f, 0); // Muy alto
-            Vector2 randomCircle = Random.insideUnitCircle * 2.5f; // Más dispersión
+            Vector3 centerScreen = new Vector3(0, 4f, 0);
+            Vector2 randomCircle = Random.insideUnitCircle * 2.5f;
             spawnPos = centerScreen + new Vector3(randomCircle.x, 0, randomCircle.y);
-
-            // !! TRUCO DE EPICIDAD 1: ROTACIÓN ALEATORIA (Z) !!
-            // Inclinamos los números a los lados (-25 a 25 grados) para que parezca
-            // que caen desordenados sobre la mesa.
             float randomZ = Random.Range(-25f, 25f);
             rotation = Quaternion.Euler(90, 0, randomZ);
         }
         else
         {
-            // MODO NORMAL: En el ladrillo, ordenadito
             spawnPos = pos + new Vector3(0, 2f, 0);
         }
 
         GameObject floatText = Instantiate(floatingTextPrefab, spawnPos, rotation);
-
-        // CÁLCULO DE TAMAÑO
         float scale = 1f + (currentCombo * scalePerHit);
-
-        // !! TRUCO DE EPICIDAD 2: TAMAÑO COLOSAL !!
-        // Antes era 1.5f, ahora multiplicamos por 3.0f si es fiebre.
         if (isFeverMode) scale *= 3.0f;
-
-        //if (scale > maxTextScale) scale = maxTextScale;
 
         FloatingScore script = floatText.GetComponent<FloatingScore>();
         if (script != null)
@@ -197,19 +209,14 @@ public class ComboEffectManager : MonoBehaviour
         }
     }
 
-    
-
-    // --- FUNCIÓN NUEVA PARA VIBRAR ---
     void TriggerVibration()
     {
-        // Cálculo: Base + (Combo * Paso)
+        // Solo vibramos si las opciones lo permiten
+        if (OptionsManager.Instance != null && !OptionsManager.Instance.VibrationEnabled) return;
+
         long duration = baseVibration + (currentCombo * vibrationStep);
-
-        // Límite: Que nunca supere el máximo (ej. 80ms)
         if (duration > maxVibration) duration = maxVibration;
-
-        // ¡Zumbido!
-        Vibration.Vibrate(duration);
+        // Vibration.Vibrate(duration); // Descomenta si usas el plugin de vibración
     }
 
     void ResetCombo()
@@ -218,78 +225,6 @@ public class ComboEffectManager : MonoBehaviour
         isFeverMode = false;
     }
 
-    void HandleFeverEffects()
-    {
-        // A) HUE SHIFT (Colores locos)
-        if (colorAdj != null)
-        {
-            // Movemos el Hue continuamente
-            currentHue += hueSpeed * Time.deltaTime;
-            if (currentHue > 180) currentHue = -180; // Loop de color
-
-            colorAdj.hueShift.value = currentHue;
-        }
-
-        // B) CHROMATIC ABERRATION (Distorsión de colores en bordes)
-        if (chromAb != null)
-        {
-            chromAb.intensity.value = Mathf.Lerp(chromAb.intensity.value, 1f, Time.deltaTime * 5f);
-        }
-
-        // C) SCREEN SHAKE (Vibración)
-        if (mainCamera != null)
-        {
-            // Generamos una posición aleatoria pequeña
-            Vector3 shakeOffset = Random.insideUnitSphere * shakeIntensity;
-
-            // Aplicamos sobre la posición actual (respetando el Gyro si existe)
-            // Nota: Esto es un efecto visual momentáneo
-            mainCamera.transform.position += shakeOffset;
-        }
-
-        // --- SONIDO LOOP FIEBRE ---
-        // Si entramos en fiebre y el sonido no está sonando, darle al Play
-        if (loopSource != null && feverLoopSound != null && !loopSource.isPlaying)
-        {
-            loopSource.volume = 0; // Empezar en silencio para hacer fade in
-            loopSource.Play();
-        }
-
-        // Fade In (Subir volumen suavemente)
-        if (loopSource != null && loopSource.isPlaying)
-        {
-            loopSource.volume = Mathf.Lerp(loopSource.volume, soundVolume * 0.6f, Time.deltaTime * 5f);
-        }
-    }
-
-    void HandleNormalReturn()
-    {
-        // Volver suavemente a la normalidad
-        if (colorAdj != null)
-        {
-            // Lerp hacia 0 (color normal)
-            colorAdj.hueShift.value = Mathf.Lerp(colorAdj.hueShift.value, 0f, Time.deltaTime * 2f);
-        }
-
-        if (chromAb != null)
-        {
-            chromAb.intensity.value = Mathf.Lerp(chromAb.intensity.value, 0f, Time.deltaTime * 2f);
-        }
-
-        // --- PARAR SONIDO FIEBRE ---
-        if (loopSource != null && loopSource.isPlaying)
-        {
-            // Fade Out (Bajar volumen suavemente)
-            loopSource.volume = Mathf.Lerp(loopSource.volume, 0f, Time.deltaTime * 5f);
-
-            // Si ya casi no se oye, lo paramos del todo
-            if (loopSource.volume < 0.01f) loopSource.Stop();
-        }
-
-        // El shake se detiene solo porque dejamos de sumar el offset aleatorio
-    }
-
-    // Helper para sacudidas puntuales
     void AddShake(float amount)
     {
         if (mainCamera != null)
