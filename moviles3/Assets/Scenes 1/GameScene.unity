@@ -2981,7 +2981,7 @@ MonoBehaviour:
   paddingZ: 0.2
   startZ: 5.5
   chanceForPowerUp: 0.2
-  forceExtraBall: 1
+  forceExtraBall: 0
   forceSpeedUp: 0
   forceSlowDown: 0
   forceSafetyNet: 0
