@@ -695,7 +695,7 @@ MonoBehaviour:
   backButton: {fileID: 456509969}
   levelInfoText: {fileID: 0}
   levelButtonPrefab: {fileID: 219918731225108329, guid: 30b65790d6460cf448d75739f92793a2, type: 3}
-  totalLevels: 12
+  totalLevels: 15
   lockedColor: {r: 0.8207547, g: 0.3445621, b: 0.36086798, a: 1}
   unlockedColor: {r: 1, g: 1, b: 1, a: 1}
   completedColor: {r: 0.16135636, g: 0.6981132, b: 0.16135636, a: 1}
