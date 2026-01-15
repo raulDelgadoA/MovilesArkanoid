@@ -11,7 +11,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes 1/LevelSelectorScene.unity
     guid: 00d35ca4c64570847a3910e4c80d0e51
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes 1/GameScene.unity
     guid: 29a27d4dfec3bf24c93054e4ca31ea38
   - enabled: 1
@@ -20,7 +20,11 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes 1/OptionsScene.unity
     guid: ee9a16a6d88f8d248bc3022cd5631425
+  - enabled: 1
+    path: Assets/Scenes 1/GameScene Sergio.unity
+    guid: e1c8fc07bf934be45866fd2021f4e524
   m_configObjects:
+    com.unity.adaptiveperformance.google.android.provider_settings: {fileID: 11400000, guid: 40eafac887b0cac4da1c0ea431e32ed9, type: 2}
     com.unity.adaptiveperformance.loader_settings: {fileID: 11400000, guid: b2f0add3bd52d724e982daef21cff6ec, type: 2}
     com.unity.adaptiveperformance.simulator.provider_settings: {fileID: 11400000, guid: 6f459c994918b164d804f9c819e60d04, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
