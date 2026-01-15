@@ -7,6 +7,10 @@ public class BallController : MonoBehaviour
     public float maxSpeed = 25f;
     public float minVerticalSpeed = 2f;
 
+    [Header("Blow Ability (Freno por Soplido)")]
+    public float blowThreshold = 0.15f; // Sensibilidad del micro
+    public float slowDownFactor = 2.5f; // Fuerza del freno (Drag)
+
     [Header("References")]
     public GameManager gameManager;
     public Transform paddle;
@@ -19,15 +23,17 @@ public class BallController : MonoBehaviour
     public AudioClip powerUpSound;  // Al coger powerup
 
     private Rigidbody rb;
-    // private AudioSource audioSource; // <--- BORRADO: Ya no lo necesitamos
     private Vector3 lastVelocity;
     private bool isLaunched = false;
     private float offsetZ;
 
+    // Variables para el Micrófono (Soplido)
+    private AudioClip _micClip;
+    private string _deviceName;
+
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
-        // audioSource = GetComponent<AudioSource>(); // <--- BORRADO
     }
 
     void Start()
@@ -55,6 +61,14 @@ public class BallController : MonoBehaviour
         }
 
         if (paddle != null) offsetZ = transform.position.z - paddle.position.z;
+
+        // --- INICIALIZAR MICRÓFONO PARA SOPLIDO ---
+        if (Microphone.devices.Length > 0)
+        {
+            _deviceName = Microphone.devices[0];
+            // Grabación en bucle de 1 segundo a 44.1kHz
+            _micClip = Microphone.Start(_deviceName, true, 1, 44100);
+        }
     }
 
     void Update()
@@ -72,8 +86,12 @@ public class BallController : MonoBehaviour
                 LaunchBall();
             }
         }
+        else
+        {
+            // Solo procesamos el soplido si la bola ya ha sido lanzada
+            HandleBlowBrake();
+        }
 
-        // Nota: rb.linearVelocity es para Unity 6. Si usas una versión anterior, cámbialo a rb.velocity
         if (rb != null && rb.linearVelocity.sqrMagnitude > 0.1f && !float.IsNaN(rb.linearVelocity.x))
             lastVelocity = rb.linearVelocity;
     }
@@ -83,8 +101,35 @@ public class BallController : MonoBehaviour
         if (isLaunched && rb != null)
         {
             Vector3 currentVelocity = rb.linearVelocity;
+            // Aplicamos la velocidad constante normal
             rb.linearVelocity = currentVelocity.normalized * initialSpeed;
             PreventFlatAngles();
+        }
+    }
+
+    // --- NUEVA FUNCIÓN: DETECCIÓN DE SOPLIDO ---
+    void HandleBlowBrake()
+    {
+        if (_micClip == null) return;
+
+        // Analizamos las últimas muestras del micrófono
+        float[] waveData = new float[128];
+        int micPos = Microphone.GetPosition(_deviceName) - 128;
+        if (micPos < 0) return;
+
+        _micClip.GetData(waveData, micPos);
+        float sum = 0;
+        for (int i = 0; i < 128; i++) sum += waveData[i] * waveData[i];
+        float level = Mathf.Sqrt(sum / 128); // Valor RMS del volumen
+
+        // Si el nivel de soplido supera el umbral, aumentamos el drag (fricción con el aire)
+        if (level > blowThreshold)
+        {
+            rb.linearDamping = slowDownFactor; // La bola "flota" o cae lento
+        }
+        else
+        {
+            rb.linearDamping = 0f; // Vuelve a su física normal de rebote
         }
     }
 
@@ -139,7 +184,6 @@ public class BallController : MonoBehaviour
         reflected.y = 0;
         rb.linearVelocity = reflected.normalized * initialSpeed;
 
-        // Reproducir sonido usando el Manager
         PlayCollisionSound(collision.gameObject.tag);
 
         if (collision.gameObject.CompareTag("Paddle")) HandlePaddleCollision(collision);
@@ -164,7 +208,6 @@ public class BallController : MonoBehaviour
 
     void ActivatePowerUp(PowerUpType type, Vector3 position)
     {
-        // --- CAMBIO: Usar AudioManager ---
         if (powerUpSound != null && AudioManager.Instance != null)
         {
             AudioManager.Instance.PlaySFX(powerUpSound);
@@ -175,17 +218,13 @@ public class BallController : MonoBehaviour
             case PowerUpType.ExtraBall:
                 if (gameManager != null) gameManager.SpawnExtraBall(position);
                 break;
-
             case PowerUpType.SpeedUp:
                 ApplySpeedModifier(1.3f);
                 break;
-
             case PowerUpType.SlowDown:
                 ApplySpeedModifier(0.8f);
                 break;
-
             case PowerUpType.SafetyNet:
-                Debug.Log("Bola: ¡He tocado un ladrillo SafetyNet!");
                 if (gameManager != null)
                     gameManager.ActivateSafetyNet(10f);
                 break;
@@ -212,7 +251,6 @@ public class BallController : MonoBehaviour
         rb.linearVelocity = newDir * initialSpeed;
     }
 
-    // --- CAMBIO COMPLETO EN ESTA FUNCIÓN ---
     void PlayCollisionSound(string tag)
     {
         if (AudioManager.Instance == null) return;
@@ -223,12 +261,9 @@ public class BallController : MonoBehaviour
                 if (paddleSound != null) AudioManager.Instance.PlaySFX(paddleSound);
                 break;
             case "Brick":
-                // Nota: Si el ladrillo se rompe, a veces el sonido lo controla el ComboManager.
-                // Si quieres que suene doble (golpe + combo), deja esto. Si no, quítalo.
                 if (brickSound != null) AudioManager.Instance.PlaySFX(brickSound);
                 break;
             default:
-                // Paredes y otros obstáculos
                 if (bounceSound != null) AudioManager.Instance.PlaySFX(bounceSound);
                 break;
         }

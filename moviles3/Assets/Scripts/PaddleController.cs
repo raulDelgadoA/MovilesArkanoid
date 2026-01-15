@@ -8,9 +8,17 @@ public class PaddleController : MonoBehaviour
 
     [Header("Gyroscope Settings (Vertical)")]
     public bool useGyroscope = true;
-    // En vertical la pantalla es más estrecha, quizás necesites menos velocidad o más precisión
     public float gyroSpeed = 35f;
-    public float deadZone = 0.02f;     // Zona muerta pequeña para detectar movimientos sutiles
+    public float deadZone = 0.02f;
+
+    [Header("Shake Ability (Habilidad Agitar)")]
+    public int maxShakes = 2;          // Límite de 2 usos por nivel
+    public float shakeCooldown = 5f;   // Cooldown de 5 segundos
+    public float shakeThreshold = 2.8f;// Sensibilidad del sacudón
+    public float upwardForce = 18f;    // Fuerza del impulso hacia arriba (Z)
+
+    private int currentShakes;
+    private float lastShakeTime;
 
     [Header("References")]
     public Transform leftWall;
@@ -43,6 +51,10 @@ public class PaddleController : MonoBehaviour
         // Plano para detectar toques
         movementPlane = new Plane(Vector3.back, transform.position);
 
+        // Inicializar usos de agitación
+        currentShakes = maxShakes;
+        UpdateShakeUI();
+
         CalculateBounds();
     }
 
@@ -58,47 +70,101 @@ public class PaddleController : MonoBehaviour
             HandleTouchInput();
         else
             HandleMouseInput();
+
+        // DETECCIÓN DE AGITACIÓN (Independiente del giroscopio)
+        if (Application.isMobilePlatform)
+        {
+            HandleShakeDetection();
+        }
     }
 
     void FixedUpdate()
     {
-        // Si NO tocas la pantalla, usamos el giroscopio
+        // Si NO tocas la pantalla, usamos el giroscopio para movimiento suave
         if (!isDragging && useGyroscope && Application.isMobilePlatform)
         {
             HandlePortraitGyro();
         }
     }
 
-    // --- MOVIMIENTO GIROSCOPIO (VERTICAL) ---
+    // --- DETECCIÓN DE AGITACIÓN BRUSCA ---
+    void HandleShakeDetection()
+    {
+        // Solo procesamos si quedan usos, no estamos en cooldown y el juego sigue activo
+        if (currentShakes > 0 && Time.time >= lastShakeTime + shakeCooldown)
+        {
+            if (GameManager.Instance != null && !GameManager.Instance.isGameOver)
+            {
+                // Usamos sqrMagnitude para detectar fuerza brusca en cualquier eje
+                // Esto no interfiere con el giroscopio porque el giro es una inclinación leve (X), 
+                // mientras que esto requiere un pico de energía física.
+                if (Input.acceleration.sqrMagnitude >= Mathf.Pow(shakeThreshold, 2))
+                {
+                    ExecuteShakeImpulse();
+                }
+            }
+        }
+    }
+
+    void ExecuteShakeImpulse()
+    {
+        lastShakeTime = Time.time;
+        currentShakes--;
+        UpdateShakeUI();
+
+        // Impulsar todas las bolas activas hacia arriba (Eje Z)
+        GameObject[] balls = GameObject.FindGameObjectsWithTag("Ball");
+        foreach (GameObject ballObj in balls)
+        {
+            Rigidbody ballRb = ballObj.GetComponent<Rigidbody>();
+            if (ballRb != null)
+            {
+                // Reseteamos velocidad vertical (Z) y aplicamos el impulso
+                ballRb.linearVelocity = new Vector3(ballRb.linearVelocity.x, 0, upwardForce);
+            }
+        }
+
+        // Feedback: Vibración y sacudida de cámara
+        Vibration.Vibrate(80);
+        if (ComboEffectManager.Instance != null)
+        {
+            ComboEffectManager.Instance.RegisterHit(Vector3.zero, 0);
+        }
+
+        Debug.Log("¡Agitación detectada! Usos restantes: " + currentShakes);
+    }
+
+    void UpdateShakeUI()
+    {
+        // Actualizamos el contador en el GameManager
+        if (GameManager.Instance != null && GameManager.Instance.shakeCounterText != null)
+        {
+            GameManager.Instance.shakeCounterText.text = "SHAKES: " + currentShakes;
+        }
+    }
+
+    // --- MOVIMIENTO GIROSCOPIO (Inclinación suave) ---
     void HandlePortraitGyro()
     {
-        // En MODO VERTICAL (Portrait):
-        // Input.acceleration.x detecta la inclinación Izquierda/Derecha.
-        // Izquierda = Negativo, Derecha = Positivo.
+        // Input.acceleration.x detecta solo la inclinación lateral
         float tiltInput = Input.acceleration.x;
 
-        // Aplicamos la zona muerta (Deadzone)
         if (Mathf.Abs(tiltInput) < deadZone)
         {
             tiltInput = 0;
-            // Frenamos en seco para dar sensación de control preciso
             rb.linearVelocity = Vector3.zero;
         }
 
-        // Calculamos el movimiento
         float moveAmount = tiltInput * gyroSpeed * Time.fixedDeltaTime;
         float newX = rb.position.x + moveAmount;
 
-        // Respetamos los límites de las paredes
         newX = Mathf.Clamp(newX, minXBound, maxXBound);
 
-        // Movemos el Rigidbody
         Vector3 targetPos = new Vector3(newX, transform.position.y, transform.position.z);
         rb.MovePosition(targetPos);
     }
 
-    // --- EL RESTO DEL CÓDIGO (TÁCTIL Y CÁLCULOS) SIGUE IGUAL ---
-
+    // --- RESTO DE MÉTODOS (Táctil y cálculos) ---
     void StartDrag(Vector2 screenPosition, int fingerId)
     {
         float worldX = GetWorldXFromScreen(screenPosition);

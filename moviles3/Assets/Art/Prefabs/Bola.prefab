@@ -125,6 +125,8 @@ MonoBehaviour:
   initialSpeed: 5
   maxSpeed: 10
   minVerticalSpeed: 2
+  blowThreshold: 0.15
+  slowDownFactor: 2.5
   gameManager: {fileID: 0}
   paddle: {fileID: 0}
   trailEffect: {fileID: 0}
