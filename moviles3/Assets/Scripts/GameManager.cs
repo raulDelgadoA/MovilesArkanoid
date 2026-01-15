@@ -24,6 +24,7 @@ public class GameManager : MonoBehaviour
     public TextMeshProUGUI levelText;
     public TextMeshProUGUI finalScoreText;
     public TextMeshProUGUI winScoreText;
+    public TextMeshProUGUI shakeCounterText;
 
     [Header("Game Objects")]
     public GameObject ballPrefab;

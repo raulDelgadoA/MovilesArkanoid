@@ -2,7 +2,7 @@
 - Project name: moviles3
 - Unity version: Unity 6000.0.58f2
 - Active game object:
-  - Name: @ShakeAbilityManager
+  - Name: LevelText
   - Tag: Untagged
-  - Layer: Default
+  - Layer: UI
 <!-- UNITY CODE ASSIST INSTRUCTIONS END -->
