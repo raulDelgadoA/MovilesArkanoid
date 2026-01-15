@@ -10,6 +10,7 @@ public class MainMenuManager : MonoBehaviour
     public Button playButton;
     public Button optionsButton;
     public Button creditsButton;
+    public Button exitButton;
 
     [Header("Sound")]
     public AudioClip buttonClickSound;
@@ -30,6 +31,9 @@ public class MainMenuManager : MonoBehaviour
 
         if (creditsButton != null)
             creditsButton.onClick.AddListener(OnCreditsButtonClick);
+
+        if (exitButton != null)
+            exitButton.onClick.AddListener(OnExitButtonClick);
 
         // Configurar UI responsive
         SetupResponsiveUI();
@@ -64,6 +68,12 @@ public class MainMenuManager : MonoBehaviour
         PlayButtonSound();
         SceneManager.LoadScene("CreditsScene");
     }
+
+    void OnExitButtonClick()
+     {
+         PlayButtonSound();
+         Application.Quit();
+     }
 
     void PlayButtonSound()
     {

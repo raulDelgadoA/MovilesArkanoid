@@ -1403,6 +1403,7 @@ MonoBehaviour:
   playButton: {fileID: 1745775834}
   optionsButton: {fileID: 52623465}
   creditsButton: {fileID: 691242046}
+  exitButton: {fileID: 213755900}
   buttonClickSound: {fileID: 0}
 --- !u!4 &1222976755
 Transform:

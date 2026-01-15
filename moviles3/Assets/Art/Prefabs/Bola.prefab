@@ -128,10 +128,10 @@ MonoBehaviour:
   gameManager: {fileID: 0}
   paddle: {fileID: 0}
   trailEffect: {fileID: 0}
-  bounceSound: {fileID: 0}
-  paddleSound: {fileID: 0}
+  bounceSound: {fileID: 8300000, guid: b5de7165f038cd44f85a6fac8b87b766, type: 3}
+  paddleSound: {fileID: 8300000, guid: b5de7165f038cd44f85a6fac8b87b766, type: 3}
   brickSound: {fileID: 0}
-  powerUpSound: {fileID: 0}
+  powerUpSound: {fileID: 8300000, guid: aa5b6e2bc7205a641acb9d65413185f4, type: 3}
 --- !u!54 &7449421549653104243
 Rigidbody:
   m_ObjectHideFlags: 0

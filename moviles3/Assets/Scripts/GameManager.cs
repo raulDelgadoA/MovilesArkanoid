@@ -19,7 +19,11 @@ public class GameManager : MonoBehaviour
     public TextMeshProUGUI scoreText;
     public TextMeshProUGUI livesText;
     public GameObject gameOverPanel;
+    public GameObject pausePanel;
+    public GameObject winPanel;
+    public TextMeshProUGUI levelText;
     public TextMeshProUGUI finalScoreText;
+    public TextMeshProUGUI winScoreText;
 
     [Header("Game Objects")]
     public GameObject ballPrefab;
@@ -215,20 +219,23 @@ public class GameManager : MonoBehaviour
         PlayerPrefs.SetInt($"Level_{currentLevel}_Completed", 1);
         PlayerPrefs.Save();
 
-        // CAMBIO: En vez de ir al Selector, vamos al siguiente nivel
-        Invoke("LoadNextLevel", 2f);
+        if (winPanel != null)
+        {
+            winPanel.SetActive(true);
+
+            if (winScoreText != null)
+                winScoreText.text = $"Score: {score}";
+        }
     }
 
     // Método para cargar el siguiente nivel infinito
-    void LoadNextLevel()
+    public void LoadNextLevel()
     {
         // Subimos el nivel
         int nextLevel = currentLevel + 1;
         PlayerPrefs.SetInt("SelectedLevel", nextLevel);
 
-        // Recargamos la MISMA escena (GameScene), pero como 'SelectedLevel' ha subido,
-        // el Generador creará un nivel más difícil.
-        SceneManager.LoadScene("LevelSelectorScene");
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     public void AddScore(int points)
@@ -239,8 +246,9 @@ public class GameManager : MonoBehaviour
 
     void UpdateUI()
     {
-        if (scoreText != null) scoreText.text = $"PUNTOS: {score}";
-        if (livesText != null) livesText.text = $"VIDAS: {lives}";
+        if (scoreText != null) scoreText.text = $"SCORE: {score}";
+        if (livesText != null) livesText.text = $"LIVES: {lives}";
+        if (levelText != null) levelText.text = $"LEVEL: {currentLevel}";
     }
 
     void GameOver()
@@ -249,8 +257,48 @@ public class GameManager : MonoBehaviour
         if (gameOverPanel != null)
         {
             gameOverPanel.SetActive(true);
-            if (finalScoreText != null) finalScoreText.text = $"Puntuación: {score}";
+            if (finalScoreText != null) finalScoreText.text = $"Score: {score}";
         }
         if (currentBall != null) Destroy(currentBall);
+    }
+
+    public void OnRestartButtonClick()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    public void OnMenuButtonClick()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene("MainMenuScene");
+    }
+
+    public void OnPauseButtonClick()
+    {
+        if (isGameOver) return;
+
+        if (pausePanel != null)
+        {
+            pausePanel.SetActive(true);
+        }
+
+        Time.timeScale = 0f;
+    }
+
+    public void OnResumeButtonClick()
+    {
+        if (pausePanel != null)
+        {
+            pausePanel.SetActive(false);
+        }
+
+        Time.timeScale = 1f;
+    }
+
+    public void OnSelectButtonClick()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene("LevelSelectorScene");
     }
 }

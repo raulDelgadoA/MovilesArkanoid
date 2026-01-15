@@ -13,13 +13,13 @@ public class BallController : MonoBehaviour
     public TrailRenderer trailEffect;
 
     [Header("Sound Effects")]
-    public AudioClip bounceSound;
-    public AudioClip paddleSound;
-    public AudioClip brickSound;
-    public AudioClip powerUpSound;
+    public AudioClip bounceSound;   // Rebote pared
+    public AudioClip paddleSound;   // Rebote pala
+    public AudioClip brickSound;    // Rebote ladrillo (si no se rompe o genérico)
+    public AudioClip powerUpSound;  // Al coger powerup
 
     private Rigidbody rb;
-    private AudioSource audioSource;
+    // private AudioSource audioSource; // <--- BORRADO: Ya no lo necesitamos
     private Vector3 lastVelocity;
     private bool isLaunched = false;
     private float offsetZ;
@@ -27,23 +27,17 @@ public class BallController : MonoBehaviour
     void Awake()
     {
         rb = GetComponent<Rigidbody>();
-        audioSource = GetComponent<AudioSource>();
-        if (audioSource == null) audioSource = gameObject.AddComponent<AudioSource>();
+        // audioSource = GetComponent<AudioSource>(); // <--- BORRADO
     }
 
     void Start()
     {
-        // --- BLOQUE DE SEGURIDAD NUEVO ---
-        // Si nadie me ha asignado un GameManager, lo busco yo mismo
+        // --- BLOQUE DE SEGURIDAD ---
         if (gameManager == null)
         {
             gameManager = GameManager.Instance;
-
-            // Si el Singleton fallara, lo buscamos por fuerza bruta
-            if (gameManager == null)
-                gameManager = FindObjectOfType<GameManager>();
+            if (gameManager == null) gameManager = FindObjectOfType<GameManager>();
         }
-        // ---------------------------------
 
         if (rb != null)
         {
@@ -54,7 +48,6 @@ public class BallController : MonoBehaviour
 
         if (trailEffect != null) trailEffect.enabled = false;
 
-        // Si la raqueta no está asignada, intenta buscarla también (opcional pero útil)
         if (paddle == null)
         {
             PaddleController paddleScript = FindObjectOfType<PaddleController>();
@@ -80,6 +73,7 @@ public class BallController : MonoBehaviour
             }
         }
 
+        // Nota: rb.linearVelocity es para Unity 6. Si usas una versión anterior, cámbialo a rb.velocity
         if (rb != null && rb.linearVelocity.sqrMagnitude > 0.1f && !float.IsNaN(rb.linearVelocity.x))
             lastVelocity = rb.linearVelocity;
     }
@@ -145,6 +139,7 @@ public class BallController : MonoBehaviour
         reflected.y = 0;
         rb.linearVelocity = reflected.normalized * initialSpeed;
 
+        // Reproducir sonido usando el Manager
         PlayCollisionSound(collision.gameObject.tag);
 
         if (collision.gameObject.CompareTag("Paddle")) HandlePaddleCollision(collision);
@@ -160,7 +155,6 @@ public class BallController : MonoBehaviour
 
             if (gameManager != null)
             {
-                // CAMBIO: Pasamos la posición del ladrillo
                 gameManager.BrickDestroyed(collision.transform.position);
             }
 
@@ -168,10 +162,13 @@ public class BallController : MonoBehaviour
         }
     }
 
-    // --- AQUÍ ESTABA LA CLAVE QUE FALTABA ---
     void ActivatePowerUp(PowerUpType type, Vector3 position)
     {
-        if (powerUpSound != null && audioSource != null) audioSource.PlayOneShot(powerUpSound);
+        // --- CAMBIO: Usar AudioManager ---
+        if (powerUpSound != null && AudioManager.Instance != null)
+        {
+            AudioManager.Instance.PlaySFX(powerUpSound);
+        }
 
         switch (type)
         {
@@ -187,13 +184,10 @@ public class BallController : MonoBehaviour
                 ApplySpeedModifier(0.8f);
                 break;
 
-            // --- ESTE ES EL CASO QUE TE FALTABA ---
             case PowerUpType.SafetyNet:
                 Debug.Log("Bola: ¡He tocado un ladrillo SafetyNet!");
                 if (gameManager != null)
-                    gameManager.ActivateSafetyNet(10f); // Activa la barrera por 10 segundos
-                else
-                    Debug.LogError("Bola: No encuentro el GameManager para activar la barrera.");
+                    gameManager.ActivateSafetyNet(10f);
                 break;
         }
     }
@@ -218,14 +212,25 @@ public class BallController : MonoBehaviour
         rb.linearVelocity = newDir * initialSpeed;
     }
 
+    // --- CAMBIO COMPLETO EN ESTA FUNCIÓN ---
     void PlayCollisionSound(string tag)
     {
-        if (audioSource == null) return;
+        if (AudioManager.Instance == null) return;
+
         switch (tag)
         {
-            case "Paddle": if (paddleSound != null) audioSource.PlayOneShot(paddleSound); break;
-            case "Brick": if (brickSound != null) audioSource.PlayOneShot(brickSound); break;
-            default: if (bounceSound != null) audioSource.PlayOneShot(bounceSound); break;
+            case "Paddle":
+                if (paddleSound != null) AudioManager.Instance.PlaySFX(paddleSound);
+                break;
+            case "Brick":
+                // Nota: Si el ladrillo se rompe, a veces el sonido lo controla el ComboManager.
+                // Si quieres que suene doble (golpe + combo), deja esto. Si no, quítalo.
+                if (brickSound != null) AudioManager.Instance.PlaySFX(brickSound);
+                break;
+            default:
+                // Paredes y otros obstáculos
+                if (bounceSound != null) AudioManager.Instance.PlaySFX(bounceSound);
+                break;
         }
     }
 }
