@@ -89,7 +89,7 @@ public class OptionsManager : MonoBehaviour
         if (soundSlider) PlayerPrefs.SetFloat("SFXVolume", soundSlider.value);
         if (musicSlider) PlayerPrefs.SetFloat("MusicVolume", musicSlider.value);
 
-        // CAMBIO: Ahora podemos usar .isOn correctamente
+        // CAMBIO: Ahora podemos usar .isOn correctamente y guardarlo con la clave "Gyroscope"
         if (gyroscopeToggle) PlayerPrefs.SetInt("Gyroscope", gyroscopeToggle.isOn ? 1 : 0);
 
         if (vibrationToggle) PlayerPrefs.SetInt("VibrationEnabled", vibrationToggle.isOn ? 1 : 0);
