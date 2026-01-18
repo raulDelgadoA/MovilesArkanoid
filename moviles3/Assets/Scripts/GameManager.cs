@@ -25,6 +25,7 @@ public class GameManager : MonoBehaviour
     public TextMeshProUGUI finalScoreText;
     public TextMeshProUGUI winScoreText;
     public TextMeshProUGUI shakeCounterText;
+    public NameInputUI nameInputPanel;
 
     [Header("Game Objects")]
     public GameObject ballPrefab;
@@ -208,24 +209,46 @@ public class GameManager : MonoBehaviour
     void LevelCompleted()
     {
         isGameOver = true;
-        Debug.Log("¡NIVEL COMPLETADO!");
 
+        // Paramos la bola
         if (currentBall != null)
         {
             BallController ballScript = currentBall.GetComponent<BallController>();
             if (ballScript != null) ballScript.StopBall();
         }
 
-        // Guardamos progreso
+        // Guardamos que el nivel está desbloqueado/completado
         PlayerPrefs.SetInt($"Level_{currentLevel}_Completed", 1);
         PlayerPrefs.Save();
 
+        // --- LÓGICA DE RANKING ---
+        // Comprobamos si es récord en ESTE nivel
+        if (RankingManager.Instance != null && RankingManager.Instance.IsNewRecord(currentLevel, score))
+        {
+            // SI ES RÉCORD: Mostramos el panel de poner nombre y esperamos
+            if (nameInputPanel != null)
+            {
+                nameInputPanel.Show(currentLevel, score, this);
+                return; // <--- IMPORTANTE: Cortamos aquí para no mostrar el WinPanel todavía
+            }
+        }
+
+        // Si no es récord (o no hay sistema de ranking), mostramos victoria normal
+        ShowWinPanel();
+    }
+
+    // Esta función la llama el panel de nombre cuando le das a OK
+    public void OnNameSubmitted()
+    {
+        ShowWinPanel();
+    }
+
+    void ShowWinPanel()
+    {
         if (winPanel != null)
         {
             winPanel.SetActive(true);
-
-            if (winScoreText != null)
-                winScoreText.text = $"Score: {score}";
+            if (winScoreText != null) winScoreText.text = $"Score: {score}";
         }
     }
 
