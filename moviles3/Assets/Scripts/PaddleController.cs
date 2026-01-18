@@ -80,12 +80,8 @@ public class PaddleController : MonoBehaviour
 
     void FixedUpdate()
     {
-        // CAMBIO: Consultamos el ajuste guardado en PlayerPrefs directamente
-        bool gyroEnabledInSettings = PlayerPrefs.GetInt("Gyroscope", 1) == 1;
-
-        // Si NO tocas la pantalla, usamos el giroscopio para movimiento suave 
-        // SOLO si está activado en las opciones y en el componente
-        if (!isDragging && useGyroscope && gyroEnabledInSettings && Application.isMobilePlatform)
+        // Si NO tocas la pantalla, usamos el giroscopio para movimiento suave
+        if (!isDragging && useGyroscope && Application.isMobilePlatform)
         {
             HandlePortraitGyro();
         }

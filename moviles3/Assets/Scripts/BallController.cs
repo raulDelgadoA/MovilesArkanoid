@@ -190,9 +190,6 @@ public class BallController : MonoBehaviour
 
         if (collision.gameObject.CompareTag("Brick"))
         {
-            // --- CAMBIO: AÑADIDA VIBRACIÓN AL IMPACTAR LADRILLO ---
-            Vibration.Vibrate(40); //
-
             BrickController brick = collision.gameObject.GetComponent<BrickController>();
 
             if (brick != null && brick.currentPowerUp != PowerUpType.None)
