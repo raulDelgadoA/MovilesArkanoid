@@ -10,6 +10,7 @@ public class MainMenuManager : MonoBehaviour
     public Button playButton;
     public Button optionsButton;
     public Button creditsButton;
+    public Button rankingButton;
     public Button exitButton;
 
     [Header("Sound")]
@@ -31,6 +32,9 @@ public class MainMenuManager : MonoBehaviour
 
         if (creditsButton != null)
             creditsButton.onClick.AddListener(OnCreditsButtonClick);
+
+        if (rankingButton != null)
+            rankingButton.onClick.AddListener(OnRankingButtonClick);
 
         if (exitButton != null)
             exitButton.onClick.AddListener(OnExitButtonClick);
@@ -68,6 +72,13 @@ public class MainMenuManager : MonoBehaviour
         PlayButtonSound();
         SceneManager.LoadScene("CreditsScene");
     }
+
+    void OnRankingButtonClick()
+    {
+        PlayButtonSound();
+        SceneManager.LoadScene("RankingSelectorScene");
+    }
+    
 
     void OnExitButtonClick()
      {

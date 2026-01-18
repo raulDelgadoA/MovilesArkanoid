@@ -1022,6 +1022,50 @@ Transform:
   m_Children: []
   m_Father: {fileID: 723184784}
   m_LocalEulerAnglesHint: {x: -90, y: 0, z: 0}
+--- !u!1 &678371277
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 678371278}
+  - component: {fileID: 678371279}
+  m_Layer: 0
+  m_Name: RankingManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &678371278
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 678371277}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -1.6136374, y: 2.9932082, z: -2.3396173}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &678371279
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 678371277}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa8fc0dfac9d2b042a09f2dff6537991, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &691242044
 GameObject:
   m_ObjectHideFlags: 0
@@ -1403,6 +1447,7 @@ MonoBehaviour:
   playButton: {fileID: 1745775834}
   optionsButton: {fileID: 52623465}
   creditsButton: {fileID: 691242046}
+  rankingButton: {fileID: 1783624220}
   exitButton: {fileID: 213755900}
   buttonClickSound: {fileID: 0}
 --- !u!4 &1222976755
@@ -2632,7 +2677,6 @@ MonoBehaviour:
   floatingTextPrefab: {fileID: 8560951656023210589, guid: 040f54a69abaf0a4eab995b56adaf52a, type: 3}
   hitSound: {fileID: 8300000, guid: 6e60000e37757f444ac9ae05ec155e6c, type: 3}
   feverLoopSound: {fileID: 8300000, guid: cc9194e86f4165549a3d7d04f48c5724, type: 3}
-  soundVolume: 0.8
   pitchStep: 0.1
   maxPitch: 2.5
   hitsToTriggerFever: 4
@@ -2673,3 +2717,4 @@ SceneRoots:
   - {fileID: 1528577453}
   - {fileID: 1977090061}
   - {fileID: 487161005}
+  - {fileID: 678371278}
