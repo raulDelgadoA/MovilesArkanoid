@@ -594,7 +594,7 @@ MonoBehaviour:
   moveSpeed: 2
   moveRange: 2.4
   projectilePrefab: {fileID: 7932430551558016220, guid: 69362e8c47596204393c0aa3b3608f1f, type: 3}
-  attackRate: 0.5
+  attackRate: 2.25
   hpText: {fileID: 0}
 --- !u!54 &1594122732727224365
 Rigidbody:
