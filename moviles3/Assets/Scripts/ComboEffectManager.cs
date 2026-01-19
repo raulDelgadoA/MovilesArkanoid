@@ -26,6 +26,9 @@ public class ComboEffectManager : MonoBehaviour
     public float hueSpeed = 150f;
     public float shakeIntensity = 0.2f;
 
+    [Header("Puntuación Fiebre")]
+    public float feverScoreMultiplier = 0.5f;
+
     [Header("Configuración Texto")]
     public float maxTextScale = 10f;
     public float scalePerHit = 0.5f;
@@ -105,8 +108,6 @@ public class ComboEffectManager : MonoBehaviour
 
         SpawnFloatingText(position, scoreAmount);
         TriggerVibration();
-
-        // --- SONIDO CON PITCH ASCENDENTE ---
         PlayComboSound();
     }
 
@@ -217,6 +218,23 @@ public class ComboEffectManager : MonoBehaviour
         long duration = baseVibration + (currentCombo * vibrationStep);
         if (duration > maxVibration) duration = maxVibration;
         // Vibration.Vibrate(duration); // Descomenta si usas el plugin de vibración
+    }
+
+    public int CalculateScoreWithFever(int baseScore)
+    {
+        // Si no estamos en modo fiebre, devolvemos la puntuación normal
+        if (!isFeverMode) return baseScore;
+
+        // Si estamos en fiebre, calculamos cuántos golpes llevamos DENTRO de la fiebre
+        // Ejemplo: Si el trigger es 5, y vamos por el combo 7, llevamos 2 golpes "extra".
+        int extraHits = currentCombo - hitsToTriggerFever;
+        if (extraHits < 0) extraHits = 0;
+
+        // Fórmula: Puntos Base + (Puntos Base * GolpesExtra * Multiplicador)
+        // Ejemplo: 100 + (100 * 2 * 0.5) = 200 puntos
+        float multiplier = 1f + (extraHits * feverScoreMultiplier);
+
+        return Mathf.RoundToInt(baseScore * multiplier);
     }
 
     void ResetCombo()

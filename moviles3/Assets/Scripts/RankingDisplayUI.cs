@@ -4,34 +4,34 @@ using System.Collections.Generic;
 
 public class RankingDisplayUI : MonoBehaviour
 {
-    public GameObject rankingPanel; // El panel que se abre
-    public TextMeshProUGUI titleText; // "NIVEL 1 - TOP 5"
+    public GameObject rankingPanel;
+    public TextMeshProUGUI titleText;
 
-    // 5 Textos para los nombres y 5 para los puntos
-    // Arrastralos en orden en el inspector
     public TextMeshProUGUI[] nameTexts;
     public TextMeshProUGUI[] scoreTexts;
 
-    public void ShowRankingForLevel(int levelID)
-    {
-        rankingPanel.SetActive(true);
-        titleText.text = $"TOP 5 - NIVEL {levelID}";
+    // Variable privada para recordar qué panel hay que volver a encender
+    private GameObject panelToRestore;
 
-        // Obtenemos datos
+    // Modificamos la función para aceptar el panel anterior como parámetro
+    public void ShowRankingForLevel(int levelID, GameObject panelComingFrom = null)
+    {
+        panelToRestore = panelComingFrom; // Guardamos la referencia
+
+        rankingPanel.SetActive(true);
+        titleText.text = $"LEVEL {levelID} - TOP 5";
+
         List<RankingManager.ScoreEntry> scores = RankingManager.Instance.GetHighScores(levelID);
 
-        // Rellenamos los textos
         for (int i = 0; i < 5; i++)
         {
             if (i < scores.Count)
             {
-                // Si hay dato
                 nameTexts[i].text = $"{i + 1}. {scores[i].name}";
-                scoreTexts[i].text = scores[i].score.ToString("N0"); // Formato número (10,000)
+                scoreTexts[i].text = scores[i].score.ToString("N0");
             }
             else
             {
-                // Si está vacío
                 nameTexts[i].text = $"{i + 1}. -----";
                 scoreTexts[i].text = "0";
             }
@@ -41,5 +41,11 @@ public class RankingDisplayUI : MonoBehaviour
     public void ClosePanel()
     {
         rankingPanel.SetActive(false);
+
+        // Si tenemos un panel guardado para restaurar, lo encendemos
+        if (panelToRestore != null)
+        {
+            panelToRestore.SetActive(true);
+        }
     }
 }

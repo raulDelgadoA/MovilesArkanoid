@@ -117,7 +117,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 950723642723049092}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90937772447e7e349b3dd8656cda5b01, type: 3}
   m_Name: 
@@ -132,7 +132,7 @@ MonoBehaviour:
   trailEffect: {fileID: 0}
   bounceSound: {fileID: 8300000, guid: b5de7165f038cd44f85a6fac8b87b766, type: 3}
   paddleSound: {fileID: 8300000, guid: b5de7165f038cd44f85a6fac8b87b766, type: 3}
-  brickSound: {fileID: 0}
+  brickSound: {fileID: 8300000, guid: 7a94259d291e95746be86f448358dae5, type: 3}
   powerUpSound: {fileID: 8300000, guid: aa5b6e2bc7205a641acb9d65413185f4, type: 3}
 --- !u!54 &7449421549653104243
 Rigidbody:
@@ -159,5 +159,5 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 0
+  m_Constraints: 116
   m_CollisionDetection: 0
