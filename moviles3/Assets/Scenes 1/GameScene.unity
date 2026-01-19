@@ -1068,12 +1068,8 @@ MonoBehaviour:
   countdownText: {fileID: 477673988}
   countdownPanel: {fileID: 784372889}
   gameUI: {fileID: 1693019188}
-  countdownDuration: 3
-  countdownSound: {fileID: 0}
-  goSound: {fileID: 0}
-  ball: {fileID: 0}
-  ballController: {fileID: 0}
-  paddleController: {fileID: 0}
+  countdownSound: {fileID: 8300000, guid: d2e72dad7c3fb544780e7778f57a824c, type: 3}
+  goSound: {fileID: 8300000, guid: 298c9e84a9dec6340832fa9db58c5a95, type: 3}
 --- !u!1 &148697936
 GameObject:
   m_ObjectHideFlags: 0
@@ -3510,7 +3506,7 @@ GameObject:
   - component: {fileID: 872845848}
   m_Layer: 0
   m_Name: Limite
-  m_TagString: Untagged
+  m_TagString: DeathZone
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -4279,6 +4275,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   brickPrefab: {fileID: 7932430551558016220, guid: 48114bb2e464bfa488fa4fc5f695cef1, type: 3}
+  bossPrefab: {fileID: 7886770218349746469, guid: cfdab02013f61014aa783fe09cfb3a6f, type: 3}
   columns: 6
   paddingX: 0.4
   paddingZ: 0.4

@@ -4,6 +4,7 @@ public class ProceduralLevelGenerator : MonoBehaviour
 {
     [Header("Settings")]
     public GameObject brickPrefab;
+    public GameObject bossPrefab;
 
     [Header("Layout")]
     public int columns = 7; // Subimos a 7 para que los patrones tengan centro
@@ -134,6 +135,30 @@ public class ProceduralLevelGenerator : MonoBehaviour
                 rend.material.EnableKeyword("_EMISSION");
                 rend.material.SetColor("_EmissionColor", finalColor * 2.5f);
             }
+        }
+    }
+
+    public void SpawnBossLevel()
+    {
+        foreach (Transform child in transform) DestroyImmediate(child.gameObject);
+
+        if (bossPrefab == null) return;
+
+        // --- CAMBIO ---
+        // Usamos Y = 1.0f para asegurarnos que flote por encima del suelo.
+        // Si tu boss mide 2 metros de alto, esto lo dejará posado en el suelo (si su pivote es el centro).
+        // Ajusta este 1.0f si sigue quedando bajo o muy alto.
+        Vector3 bossPos = new Vector3(0, 2.0f, 5f);
+
+        GameObject boss = Instantiate(bossPrefab, bossPos, Quaternion.Euler(0, 0, 0));
+
+        boss.transform.SetParent(transform);
+
+        BossController bossScript = boss.GetComponent<BossController>();
+        if (bossScript != null)
+        {
+            int currentLevel = GameManager.Instance.currentLevel;
+            bossScript.maxHealth = 10 * (currentLevel / 5);
         }
     }
 }

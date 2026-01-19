@@ -178,20 +178,55 @@ public class BallController : MonoBehaviour
         if (rb == null) return;
 
         Vector3 normal = collision.contacts[0].normal;
-        if (lastVelocity == Vector3.zero || float.IsNaN(lastVelocity.x)) lastVelocity = transform.forward * initialSpeed;
-
-        Vector3 reflected = Vector3.Reflect(lastVelocity, normal);
+        Vector3 reflected = Vector3.Reflect(lastVelocity.normalized, normal);
         reflected.y = 0;
         rb.linearVelocity = reflected.normalized * initialSpeed;
 
         PlayCollisionSound(collision.gameObject.tag);
 
-        if (collision.gameObject.CompareTag("Paddle")) HandlePaddleCollision(collision);
-
-        if (collision.gameObject.CompareTag("Brick"))
+        if (collision.gameObject.CompareTag("Paddle"))
         {
-            BrickController brick = collision.gameObject.GetComponent<BrickController>();
+            HandlePaddleCollision(collision);
+        }
+        else if (collision.gameObject.CompareTag("Brick"))
+        {
+            // 1. ¿ES EL BOSS?
+            BossController boss = collision.gameObject.GetComponent<BossController>();
+            if (boss != null)
+            {
+                boss.TakeDamage();
+                if (gameManager != null) gameManager.AddScore(500);
+                if (ComboEffectManager.Instance != null)
+                    ComboEffectManager.Instance.RegisterHit(collision.transform.position, 500);
+                return;
+            }
 
+            // 2. --- NUEVO FIX: ¿ES UN PROYECTIL? ---
+            // Si es un proyectil, lo tratamos como ladrillo (PowerUps) PERO NO AVISAMOS AL GAMEMANAGER
+            // para que no reste del contador de victoria.
+            if (collision.gameObject.GetComponent<BossProjectile>() != null)
+            {
+                // Lógica de PowerUps (igual que un ladrillo)
+                BrickController brickProj = collision.gameObject.GetComponent<BrickController>();
+                if (brickProj != null && brickProj.currentPowerUp != PowerUpType.None)
+                {
+                    ActivatePowerUp(brickProj.currentPowerUp, collision.transform.position);
+                }
+
+                // Damos unos puntitos extra por la habilidad
+                if (gameManager != null) gameManager.AddScore(100);
+                if (ComboEffectManager.Instance != null)
+                    ComboEffectManager.Instance.RegisterHit(collision.transform.position, 100);
+                // Destruimos el proyectil
+                Destroy(collision.gameObject);
+
+                // IMPORTANTE: Hacemos return para NO ejecutar el BrickDestroyed de abajo
+                return;
+            }
+            // ---------------------------------------
+
+            // 3. ES UN LADRILLO NORMAL DEL NIVEL
+            BrickController brick = collision.gameObject.GetComponent<BrickController>();
             if (brick != null && brick.currentPowerUp != PowerUpType.None)
             {
                 ActivatePowerUp(brick.currentPowerUp, collision.transform.position);
@@ -199,9 +234,9 @@ public class BallController : MonoBehaviour
 
             if (gameManager != null)
             {
+                // Este sí cuenta para ganar el nivel
                 gameManager.BrickDestroyed(collision.transform.position);
             }
-
             Destroy(collision.gameObject);
         }
     }

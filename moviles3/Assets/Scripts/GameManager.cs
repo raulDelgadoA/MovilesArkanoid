@@ -72,15 +72,30 @@ public class GameManager : MonoBehaviour
 
         if (safetyBarrier != null) safetyBarrier.SetActive(false);
 
+        // --- LÓGICA DE BOSS ---
         if (proceduralGenerator != null)
         {
-            proceduralGenerator.GenerateLevel(currentLevel);
-        }
+            // Si el nivel es múltiplo de 5 (5, 10, 15...), toca JEFE
+            if (currentLevel % 5 == 0)
+            {
+                proceduralGenerator.SpawnBossLevel();
 
-        bricksRemaining = GameObject.FindGameObjectsWithTag("Brick").Length;
+                // IMPORTANTE: Para ganar al boss, hay que matarlo.
+                // Como el Boss es 1 solo objeto, ponemos bricksRemaining a 1.
+                // Cuando el Boss muera, llamará a BrickDestroyed y ganaremos.
+                bricksRemaining = 1;
+            }
+            else
+            {
+                // Nivel normal
+                proceduralGenerator.GenerateLevel(currentLevel);
+                bricksRemaining = GameObject.FindGameObjectsWithTag("Brick").Length;
+            }
+        }
+        // ---------------------
+
         Debug.Log($"Nivel {currentLevel} iniciado. Ladrillos reales: {bricksRemaining}");
 
-        // AL INICIAR NIVEL: Usamos la función CON countdown
         SpawnBallWithCountdown();
     }
 
