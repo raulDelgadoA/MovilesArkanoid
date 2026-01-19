@@ -10,6 +10,8 @@ TagManager:
   - Paddle
   - Brick
   - MusicPlayer
+  - DeathZone
+  - Boss
   layers:
   - Default
   - TransparentFX

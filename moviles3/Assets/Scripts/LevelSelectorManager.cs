@@ -13,35 +13,34 @@ public class LevelSelectorManager : MonoBehaviour
     public GameObject levelButtonPrefab;
 
     [Header("Level Settings")]
-    public int totalLevels = 12;
+    public int totalLevels = 20;
+
+    [Header("Standard Colors")]
     public Color lockedColor = Color.gray;
     public Color unlockedColor = Color.white;
     public Color completedColor = Color.green;
+
+    [Header("Boss Colors")]
+    public Color bossLevelColor = new Color(1f, 0.4f, 0.4f);      // Rojo claro (Peligro)
+    public Color bossCompletedColor = new Color(0.7f, 0f, 0f);    // Rojo oscuro (Boss Muerto)
 
     private List<GameObject> levelButtons = new List<GameObject>();
 
     void Start()
     {
-        // Crear botones de niveles
         CreateLevelButtons();
 
-        // Configurar botón de volver
         if (backButton != null)
             backButton.onClick.AddListener(OnBackButtonClick);
-
-        // Configurar información inicial
-        UpdateLevelInfo(1);
     }
 
     void CreateLevelButtons()
     {
-        // Limpiar grid si ya hay botones
         foreach (Transform child in levelGrid)
             Destroy(child.gameObject);
 
         levelButtons.Clear();
 
-        // Crear botones para cada nivel
         for (int i = 1; i <= totalLevels; i++)
         {
             GameObject buttonObj = Instantiate(levelButtonPrefab, levelGrid);
@@ -51,9 +50,9 @@ public class LevelSelectorManager : MonoBehaviour
             if (buttonText != null)
                 buttonText.text = i.ToString();
 
-            // Configurar según estado del nivel
             bool isUnlocked = IsLevelUnlocked(i);
             bool isCompleted = IsLevelCompleted(i);
+            bool isBossLevel = (i % 5 == 0); // ¿Es múltiplo de 5?
 
             button.interactable = isUnlocked;
 
@@ -61,18 +60,43 @@ public class LevelSelectorManager : MonoBehaviour
             if (buttonImage != null)
             {
                 if (isCompleted)
-                    buttonImage.color = completedColor;
+                {
+                    // --- CAMBIO AQUÍ ---
+                    if (isBossLevel)
+                    {
+                        // Si es Boss y ya lo mataste -> Color especial de Boss Completado
+                        buttonImage.color = bossCompletedColor;
+                    }
+                    else
+                    {
+                        // Nivel normal completado -> Verde
+                        buttonImage.color = completedColor;
+                    }
+                }
                 else if (isUnlocked)
-                    buttonImage.color = unlockedColor;
+                {
+                    // Está disponible para jugar
+                    if (isBossLevel)
+                    {
+                        // Es Boss -> Color de Peligro
+                        buttonImage.color = bossLevelColor;
+                    }
+                    else
+                    {
+                        // Nivel normal -> Blanco
+                        buttonImage.color = unlockedColor;
+                    }
+                }
                 else
+                {
+                    // Bloqueado -> Gris
                     buttonImage.color = lockedColor;
+                }
             }
 
-            // Asignar listener
             int levelIndex = i;
             button.onClick.AddListener(() => OnLevelSelected(levelIndex));
 
-            // Mostrar candado si está bloqueado
             Transform lockIcon = buttonObj.transform.Find("LockIcon");
             if (lockIcon != null)
                 lockIcon.gameObject.SetActive(!isUnlocked);
@@ -83,10 +107,7 @@ public class LevelSelectorManager : MonoBehaviour
 
     bool IsLevelUnlocked(int level)
     {
-        // El nivel 1 siempre está desbloqueado
         if (level == 1) return true;
-
-        // Los niveles se desbloquean completando el anterior
         return PlayerPrefs.GetInt($"Level_{level - 1}_Completed", 0) == 1;
     }
 
@@ -101,15 +122,6 @@ public class LevelSelectorManager : MonoBehaviour
         {
             PlayerPrefs.SetInt("SelectedLevel", level);
             SceneManager.LoadScene("GameScene");
-        }
-    }
-
-    void UpdateLevelInfo(int level)
-    {
-        if (levelInfoText != null)
-        {
-            int highScore = PlayerPrefs.GetInt($"Level_{level}_HighScore", 0);
-            levelInfoText.text = $"Nivel {level}\nRecord: {highScore}";
         }
     }
 

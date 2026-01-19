@@ -699,6 +699,8 @@ MonoBehaviour:
   lockedColor: {r: 0.8207547, g: 0.3445621, b: 0.36086798, a: 1}
   unlockedColor: {r: 1, g: 1, b: 1, a: 1}
   completedColor: {r: 0.16135636, g: 0.6981132, b: 0.16135636, a: 1}
+  bossLevelColor: {r: 0.4057701, g: 0.39999998, b: 1, a: 1}
+  bossCompletedColor: {r: 0.7560185, g: 0.53631186, b: 0.8679245, a: 1}
 --- !u!4 &904656512
 Transform:
   m_ObjectHideFlags: 0
