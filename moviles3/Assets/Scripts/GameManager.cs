@@ -24,14 +24,16 @@ public class GameManager : MonoBehaviour
     public TextMeshProUGUI levelText;
     public TextMeshProUGUI finalScoreText;
     public TextMeshProUGUI winScoreText;
+
+    // RECUPERADO: Variable para el texto de sacudidas
     public TextMeshProUGUI shakeCounterText;
+
     public NameInputUI nameInputPanel;
 
     [Header("Game Objects")]
     public GameObject ballPrefab;
     public Transform paddle;
     public ProceduralLevelGenerator proceduralGenerator;
-
     public GameObject safetyBarrier;
 
     private GameObject currentBall;
@@ -45,31 +47,21 @@ public class GameManager : MonoBehaviour
 
     void Start()
     {
-        // --- CÓDIGO NUEVO PARA MÓVIL ---
-        // 1. Desbloquear FPS (Para que vaya a 60 o 120fps fluido)
         Application.targetFrameRate = 60;
-
-        // 2. Evitar que la pantalla se apague si no tocas nada
         Screen.sleepTimeout = SleepTimeout.NeverSleep;
-        // -------------------------------
 
         currentLevel = PlayerPrefs.GetInt("SelectedLevel", 1);
         UpdateUI();
-        Input.gyro.enabled = true; // Fuerza el encendido del giroscopio
+        Input.gyro.enabled = true;
         InitializeLevel();
     }
 
     void Update()
     {
-        // TRUCO DE DEBUG: Si pulsas 'R', reinicia el nivel al instante
-        // Solo funcionará en el editor de Unity, no en el móvil final
         if (Application.isEditor && Input.GetKeyDown(KeyCode.R))
         {
             Debug.Log("Regenerando nivel...");
-            // Borramos bolas viejas
             if (currentBall != null) Destroy(currentBall);
-
-            // Volvemos a inicializar todo (esto leerá tus casillas marcadas nuevas)
             InitializeLevel();
         }
     }
@@ -78,26 +70,25 @@ public class GameManager : MonoBehaviour
     {
         isGameOver = false;
 
-        // 1. Aseguramos que la barrera esté apagada
         if (safetyBarrier != null) safetyBarrier.SetActive(false);
 
-        // 2. Generamos el nivel (Con DestroyImmediate ya no habrá fantasmas)
         if (proceduralGenerator != null)
         {
             proceduralGenerator.GenerateLevel(currentLevel);
         }
 
-        // 3. Ahora sí contamos. Como usamos DestroyImmediate, la cuenta será exacta.
         bricksRemaining = GameObject.FindGameObjectsWithTag("Brick").Length;
-
         Debug.Log($"Nivel {currentLevel} iniciado. Ladrillos reales: {bricksRemaining}");
 
-        SpawnBall();
+        // AL INICIAR NIVEL: Usamos la función CON countdown
+        SpawnBallWithCountdown();
     }
 
-    public void SpawnBall()
+    // --- SISTEMA DE SPAWN ---
+
+    // Función base para crear bola (para no repetir código)
+    private BallController CreateBall()
     {
-        if (isGameOver) return;
         if (currentBall != null) Destroy(currentBall);
 
         Vector3 spawnPos = new Vector3(paddle.position.x, paddle.position.y, paddle.position.z + 0.8f);
@@ -109,43 +100,44 @@ public class GameManager : MonoBehaviour
             ballScript.gameManager = this;
             ballScript.paddle = paddle;
         }
+        return ballScript;
     }
 
-    // --- FUNCIÓN PARA BOLA EXTRA ---
-    public void SpawnExtraBall(Vector3 position)
+    // OPCIÓN A: Start Level (Con Countdown y Autolaunch)
+    public void SpawnBallWithCountdown()
     {
-        GameObject extraBall = Instantiate(ballPrefab, position, Quaternion.identity);
-        BallController ballScript = extraBall.GetComponent<BallController>();
-        if (ballScript != null)
+        if (isGameOver) return;
+
+        BallController ballScript = CreateBall();
+        PaddleController paddleScript = paddle.GetComponent<PaddleController>();
+
+        // Llamamos al CountdownManager
+        if (CountdownManager.Instance != null)
         {
-            ballScript.gameManager = this;
-            ballScript.paddle = paddle;
-            Vector3 randomDir = new Vector3(Random.Range(-1f, 1f), 0, Random.Range(-1f, -0.2f)).normalized;
-            ballScript.LaunchImmediate(randomDir);
+            CountdownManager.Instance.StartGameCountdown(paddleScript, ballScript);
         }
     }
+
+    // OPCIÓN B: Perder Vida (Sin Countdown, Manual Launch)
+    public void SpawnBallImmediate()
+    {
+        if (isGameOver) return;
+
+        CreateBall();
+        // NO llamamos al countdown. La bola aparece en la pala y espera tu clic.
+    }
+
+    // --- GESTIÓN DE VIDAS ---
 
     public void OnBallFell(GameObject ballObj)
     {
-        // 1. Destruimos la bola que ha tocado el suelo
         Destroy(ballObj);
-
-        // 2. Contamos cuántas bolas hay AHORA MISMO en la escena.
-        // OJO: Como Destroy no es inmediato (ocurre al final del frame), 
-        // Unity todavía encontrará la bola que acabamos de mandar destruir.
-        // Por eso, si contamos 1 bola, significa que es la que se está muriendo -> Perder Vida.
-        // Si contamos 2 o más, significa que quedan otras vivas -> Seguimos jugando.
-
         int ballsActive = GameObject.FindGameObjectsWithTag("Ball").Length;
 
+        // Si queda 1 (que es la que vamos a destruir), perdemos vida
         if (ballsActive <= 1)
         {
-            // Era la última bola
             LoseLife();
-        }
-        else
-        {
-            Debug.Log($"Una bola cayó, pero quedan {ballsActive - 1} en juego.");
         }
     }
 
@@ -160,48 +152,50 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            // Si perdemos vida, volvemos a sacar una bola nueva desde la raqueta
-            SpawnBall();
+            // AL MORIR: Usamos Spawn Inmediato (tú la lanzas con clic)
+            SpawnBallImmediate();
         }
     }
 
-    // --- FUNCIÓN DE LA BARRERA ---
+    // --- RESTO DE FUNCIONES (PowerUps, Score, UI...) ---
+
+    public void SpawnExtraBall(Vector3 position)
+    {
+        GameObject extraBall = Instantiate(ballPrefab, position, Quaternion.identity);
+        BallController ballScript = extraBall.GetComponent<BallController>();
+        if (ballScript != null)
+        {
+            ballScript.gameManager = this;
+            ballScript.paddle = paddle;
+            Vector3 randomDir = new Vector3(Random.Range(-1f, 1f), 0, Random.Range(-1f, -0.2f)).normalized;
+            ballScript.LaunchImmediate(randomDir);
+        }
+    }
+
     public void ActivateSafetyNet(float duration)
     {
-        // DEBUG: Comprobar si tenemos la barrera asignada
-        if (safetyBarrier == null)
-        {
-            Debug.LogError("¡ERROR! El GameManager intenta activar la barrera, pero la variable 'Safety Barrier' está vacía (None). Arrastra el cubo al Inspector.");
-            return;
-        }
-
+        if (safetyBarrier == null) return;
         safetyBarrier.SetActive(true);
-        Debug.Log($"Barrera ACTIVADA por {duration} segundos.");
-
         CancelInvoke("DisableSafetyNet");
         Invoke("DisableSafetyNet", duration);
     }
 
     void DisableSafetyNet()
     {
-        if (safetyBarrier != null)
-        {
-            safetyBarrier.SetActive(false);
-            Debug.Log("Barrera desactivada.");
-        }
+        if (safetyBarrier != null) safetyBarrier.SetActive(false);
     }
-
 
     public void BrickDestroyed(Vector3 brickPos)
     {
-        AddScore(scorePerBrick);
+        int finalPoints = scorePerBrick;
 
-        // Pasamos la posición y la puntuación al ComboManager
         if (ComboEffectManager.Instance != null)
         {
-            ComboEffectManager.Instance.RegisterHit(brickPos, scorePerBrick);
+            finalPoints = ComboEffectManager.Instance.CalculateScoreWithFever(scorePerBrick);
+            ComboEffectManager.Instance.RegisterHit(brickPos, finalPoints);
         }
 
+        AddScore(finalPoints);
         bricksRemaining--;
         if (bricksRemaining <= 0) LevelCompleted();
     }
@@ -209,35 +203,26 @@ public class GameManager : MonoBehaviour
     void LevelCompleted()
     {
         isGameOver = true;
-
-        // Paramos la bola
         if (currentBall != null)
         {
             BallController ballScript = currentBall.GetComponent<BallController>();
             if (ballScript != null) ballScript.StopBall();
         }
 
-        // Guardamos que el nivel está desbloqueado/completado
         PlayerPrefs.SetInt($"Level_{currentLevel}_Completed", 1);
         PlayerPrefs.Save();
 
-        // --- LÓGICA DE RANKING ---
-        // Comprobamos si es récord en ESTE nivel
         if (RankingManager.Instance != null && RankingManager.Instance.IsNewRecord(currentLevel, score))
         {
-            // SI ES RÉCORD: Mostramos el panel de poner nombre y esperamos
             if (nameInputPanel != null)
             {
                 nameInputPanel.Show(currentLevel, score, this);
-                return; // <--- IMPORTANTE: Cortamos aquí para no mostrar el WinPanel todavía
+                return;
             }
         }
-
-        // Si no es récord (o no hay sistema de ranking), mostramos victoria normal
         ShowWinPanel();
     }
 
-    // Esta función la llama el panel de nombre cuando le das a OK
     public void OnNameSubmitted()
     {
         ShowWinPanel();
@@ -252,13 +237,10 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    // Método para cargar el siguiente nivel infinito
     public void LoadNextLevel()
     {
-        // Subimos el nivel
         int nextLevel = currentLevel + 1;
         PlayerPrefs.SetInt("SelectedLevel", nextLevel);
-
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
@@ -301,22 +283,13 @@ public class GameManager : MonoBehaviour
     public void OnPauseButtonClick()
     {
         if (isGameOver) return;
-
-        if (pausePanel != null)
-        {
-            pausePanel.SetActive(true);
-        }
-
+        if (pausePanel != null) pausePanel.SetActive(true);
         Time.timeScale = 0f;
     }
 
     public void OnResumeButtonClick()
     {
-        if (pausePanel != null)
-        {
-            pausePanel.SetActive(false);
-        }
-
+        if (pausePanel != null) pausePanel.SetActive(false);
         Time.timeScale = 1f;
     }
 

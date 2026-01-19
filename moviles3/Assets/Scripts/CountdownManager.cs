@@ -1,142 +1,131 @@
 using UnityEngine;
-using UnityEngine.UI;
 using TMPro;
 using System.Collections;
 
 public class CountdownManager : MonoBehaviour
 {
+    public static CountdownManager Instance;
+
     [Header("UI References")]
     public TextMeshProUGUI countdownText;
     public GameObject countdownPanel;
     public GameObject gameUI;
 
-    [Header("Countdown Settings")]
-    public float countdownDuration = 3f;
-    public AudioClip countdownSound; // Arrastra aquí el sonido "3, 2, 1"
-    public AudioClip goSound;        // Arrastra aquí el sonido "GO!"
+    [Header("Audio")]
+    public AudioClip countdownSound;
+    public AudioClip goSound;
 
-    [Header("Game References")]
-    public GameObject ball;
-    public BallController ballController;
-    public PaddleController paddleController;
+    private PaddleController paddleRef;
+    private BallController ballRef;
 
-    // Ya no necesitamos audioSource ni gameManager aquí para el sonido
+    // Guardamos el tamaño original aquí
+    private Vector3 originalScale;
 
-    void Start()
+    void Awake()
     {
-        // Iniciar countdown
-        StartCoroutine(StartCountdown());
+        if (Instance == null) Instance = this;
+
+        // --- CORRECCIÓN ---
+        // Guardamos la escala AQUÍ (Awake) en lugar de en Start.
+        // Así aseguramos que el valor existe antes de que el GameManager lo pida.
+        if (countdownText != null)
+        {
+            originalScale = countdownText.transform.localScale;
+
+            // Si por algún error es cero (muy raro), forzamos a 1
+            if (originalScale == Vector3.zero) originalScale = Vector3.one;
+        }
     }
 
-    IEnumerator StartCountdown()
+    public void StartGameCountdown(PaddleController paddle, BallController ball)
     {
-        // Ocultar UI de juego
+        this.paddleRef = paddle;
+        this.ballRef = ball;
+        StartCoroutine(RoutineCountdown());
+    }
+
+    IEnumerator RoutineCountdown()
+    {
+        // 1. BLOQUEAR CONTROLES
+        if (paddleRef != null) paddleRef.enabled = false;
+        if (ballRef != null) ballRef.enabled = false;
+
+        // 2. PREPARAR UI
         if (gameUI != null) gameUI.SetActive(false);
-
-        // Desactivar controles
-        if (paddleController != null) paddleController.enabled = false;
-        if (ballController != null) ballController.enabled = false;
-
-        // Activar panel de countdown
         if (countdownPanel != null) countdownPanel.SetActive(true);
 
-        // Countdown: 3, 2, 1
-        for (int i = (int)countdownDuration; i > 0; i--)
+        // Restaurar escala original por si acaso
+        if (countdownText != null) countdownText.transform.localScale = originalScale;
+
+        // 3. CUENTA ATRÁS (3, 2, 1)
+        int count = 3;
+        while (count > 0)
         {
             if (countdownText != null)
             {
-                countdownText.text = i.ToString();
-                countdownText.fontSize = 150;
-
-                // Animación simple
-                StartCoroutine(ScaleText(countdownText.transform, 1.5f, 0.2f));
+                countdownText.text = count.ToString();
+                // Animación de latido usando la escala original correcta
+                StartCoroutine(AnimateHeartbeat(countdownText.transform));
             }
 
-            // --- CAMBIO: Usar AudioManager ---
             if (AudioManager.Instance != null && countdownSound != null)
-            {
                 AudioManager.Instance.PlaySFX(countdownSound);
-            }
 
             yield return new WaitForSeconds(1f);
+            count--;
         }
 
-        // "GO!"
+        // 4. ¡GO!
         if (countdownText != null)
         {
-            countdownText.text = "¡GO!";
-            countdownText.fontSize = 120;
-            StartCoroutine(ScaleText(countdownText.transform, 1.8f, 0.3f));
+            countdownText.text = "GO!";
+            StartCoroutine(AnimateHeartbeat(countdownText.transform));
         }
 
-        // --- CAMBIO: Usar AudioManager para el GO ---
         if (AudioManager.Instance != null && goSound != null)
-        {
             AudioManager.Instance.PlaySFX(goSound);
-        }
 
         yield return new WaitForSeconds(0.5f);
 
-        // Desactivar panel de countdown
+        // 5. DESBLOQUEAR TODO Y LANZAR
         if (countdownPanel != null) countdownPanel.SetActive(false);
-
-        // Activar UI de juego
         if (gameUI != null) gameUI.SetActive(true);
 
-        // Activar controles
-        if (paddleController != null) paddleController.enabled = true;
-        if (ballController != null) ballController.enabled = true;
+        if (paddleRef != null) paddleRef.enabled = true;
 
-        // Lanzar la bola
-        LaunchBall();
-    }
-
-    void LaunchBall()
-    {
-        if (ball != null)
+        if (ballRef != null)
         {
-            Rigidbody2D rb = ball.GetComponent<Rigidbody2D>(); // Ojo: Si es 2D usa Rigidbody2D, si es 3D Rigidbody
-            if (rb != null)
-            {
-                // Dirección aleatoria hacia arriba
-                Vector2 direction = new Vector2(
-                    Random.Range(-0.5f, 0.5f),
-                    1f
-                ).normalized;
-
-                // Nota: linearVelocity es de Unity 6/Preview, si usas versiones anteriores usa .velocity
-                rb.linearVelocity = direction * 5f;
-            }
+            ballRef.enabled = true;
+            ballRef.LaunchBall();
         }
     }
 
-    IEnumerator ScaleText(Transform textTransform, float targetScale, float duration)
+    IEnumerator AnimateHeartbeat(Transform target)
     {
-        Vector3 originalScale = textTransform.localScale;
-        Vector3 target = originalScale * targetScale;
+        float timer = 0f;
+        float duration = 0.25f;
 
-        float elapsed = 0f;
-        while (elapsed < duration)
+        // Calculamos el tamaño máximo (un 20% más grande que el original)
+        Vector3 targetBigScale = originalScale * 1.2f;
+
+        // Fase 1: Crecer
+        while (timer < duration)
         {
-            textTransform.localScale = Vector3.Lerp(originalScale, target, elapsed / duration);
-            elapsed += Time.deltaTime;
+            timer += Time.deltaTime;
+            target.localScale = Vector3.Lerp(originalScale, targetBigScale, timer / duration);
             yield return null;
         }
 
-        // Volver a tamaño normal
-        elapsed = 0f;
-        while (elapsed < duration)
+        // Fase 2: Encoger (Volver al original)
+        timer = 0f;
+        while (timer < duration)
         {
-            textTransform.localScale = Vector3.Lerp(target, originalScale, elapsed / duration);
-            elapsed += Time.deltaTime;
+            timer += Time.deltaTime;
+            target.localScale = Vector3.Lerp(targetBigScale, originalScale, timer / duration);
             yield return null;
         }
 
-        textTransform.localScale = originalScale;
-    }
-
-    public void RestartCountdown()
-    {
-        StartCoroutine(StartCountdown());
+        // Aseguramos que queda clavado en el tamaño original al terminar
+        target.localScale = originalScale;
     }
 }
