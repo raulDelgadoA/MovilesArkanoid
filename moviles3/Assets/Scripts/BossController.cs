@@ -81,9 +81,6 @@ public class BossController : MonoBehaviour
             Invoke("ResetColor", 0.1f);
         }
 
-        // Feedback de sonido y vibración
-        if (AudioManager.Instance != null) AudioManager.Instance.PlaySFX(AudioManager.Instance.uiClickSound); // Usa un sonido de golpe fuerte
-
         if (currentHealth <= 0)
         {
             Die();

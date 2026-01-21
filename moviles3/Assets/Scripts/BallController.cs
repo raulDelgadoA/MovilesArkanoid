@@ -392,6 +392,8 @@ public class BallController : MonoBehaviour
 
                 boss.TakeDamage();
 
+                PlayCollisionSound(collision.gameObject.tag);
+
                 if (gameManager != null) gameManager.AddScore(500);
 
                 if (ComboEffectManager.Instance != null)
