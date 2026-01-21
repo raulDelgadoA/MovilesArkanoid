@@ -62,12 +62,15 @@ public class BallController : MonoBehaviour
     {
         if (!isLaunched)
         {
+            // Solo actualizamos la posición si NO estamos usando el giroscopio o si la bola está pegada
+            // (La lógica de movimiento la lleva el Paddle, aquí solo seguimos)
             if (paddle != null)
             {
                 Vector3 newPos = new Vector3(paddle.position.x, transform.position.y, paddle.position.z + offsetZ);
                 transform.position = newPos;
             }
 
+            // Lanzamiento: Permitimos clic o toque
             if (Input.GetMouseButtonDown(0) || (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began))
             {
                 LaunchBall();
@@ -145,7 +148,6 @@ public class BallController : MonoBehaviour
         }
         else if (collision.gameObject.CompareTag("Brick"))
         {
-            // 1. ¿ES EL BOSS?
             BossController boss = collision.gameObject.GetComponent<BossController>();
             if (boss != null)
             {
@@ -154,13 +156,10 @@ public class BallController : MonoBehaviour
                 if (ComboEffectManager.Instance != null)
                     ComboEffectManager.Instance.RegisterHit(collision.transform.position, 500);
 
-                // --- VIBRACIÓN FUERTE (Boss) ---
                 VibrarSuave(120, 150);
-
                 return;
             }
 
-            // 2. ¿ES UN PROYECTIL?
             if (collision.gameObject.GetComponent<BossProjectile>() != null)
             {
                 BrickController brickProj = collision.gameObject.GetComponent<BrickController>();
@@ -174,14 +173,10 @@ public class BallController : MonoBehaviour
                     ComboEffectManager.Instance.RegisterHit(collision.transform.position, 100);
 
                 Destroy(collision.gameObject);
-
-                // --- VIBRACIÓN MEDIA (Proyectil) ---
                 VibrarSuave(50, 80);
-
                 return;
             }
 
-            // 3. ES UN LADRILLO NORMAL
             BrickController brick = collision.gameObject.GetComponent<BrickController>();
             if (brick != null && brick.currentPowerUp != PowerUpType.None)
             {
@@ -191,9 +186,6 @@ public class BallController : MonoBehaviour
             if (gameManager != null)
             {
                 gameManager.BrickDestroyed(collision.transform.position);
-
-                // --- VIBRACIÓN SUAVE (Ladrillo) ---
-                // 40ms duración, 45 fuerza (muy sutil)
                 VibrarSuave(40, 45);
             }
             Destroy(collision.gameObject);
@@ -264,41 +256,44 @@ public class BallController : MonoBehaviour
     }
 
     // =========================================================
-    // FUNCIÓN DE VIBRACIÓN INTEGRADA (Android Suave)
+    // MODIFICADO: COMPROBACIÓN DE OPCIONES
     // =========================================================
     void VibrarSuave(long milisegundos, int fuerza)
     {
-        #if UNITY_ANDROID && !UNITY_EDITOR
-                try {
-                    using (AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
-                    using (AndroidJavaObject currentActivity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
-                    using (AndroidJavaObject vibrator = currentActivity.Call<AndroidJavaObject>("getSystemService", "vibrator"))
-                    {
-                        if (vibrator != null)
-                        {
-                            int sdkVersion = new AndroidJavaClass("android.os.Build$VERSION").GetStatic<int>("SDK_INT");
+        // 1. CHEQUEO DE SEGURIDAD: ¿Está la vibración activada en opciones?
+        if (OptionsManager.Instance != null && !OptionsManager.Instance.VibrationEnabled)
+        {
+            return; // Si está desactivado, salimos inmediatamente
+        }
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+        try {
+            using (AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+            using (AndroidJavaObject currentActivity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
+            using (AndroidJavaObject vibrator = currentActivity.Call<AndroidJavaObject>("getSystemService", "vibrator"))
+            {
+                if (vibrator != null)
+                {
+                    int sdkVersion = new AndroidJavaClass("android.os.Build$VERSION").GetStatic<int>("SDK_INT");
                     
-                            if (sdkVersion >= 26) // Android 8.0+
-                            {
-                                using (AndroidJavaClass vibrationEffectClass = new AndroidJavaClass("android.os.VibrationEffect"))
-                                using (AndroidJavaObject effect = vibrationEffectClass.CallStatic<AndroidJavaObject>("createOneShot", milisegundos, fuerza))
-                                {
-                                    vibrator.Call("vibrate", effect);
-                                }
-                            }
-                            else // Móviles antiguos
-                            {
-                                vibrator.Call("vibrate", milisegundos);
-                            }
+                    if (sdkVersion >= 26) 
+                    {
+                        using (AndroidJavaClass vibrationEffectClass = new AndroidJavaClass("android.os.VibrationEffect"))
+                        using (AndroidJavaObject effect = vibrationEffectClass.CallStatic<AndroidJavaObject>("createOneShot", milisegundos, fuerza))
+                        {
+                            vibrator.Call("vibrate", effect);
                         }
                     }
+                    else 
+                    {
+                        vibrator.Call("vibrate", milisegundos);
+                    }
                 }
-                catch (System.Exception) {
-                    // Silencioso si falla
-                }
-        #elif UNITY_IOS && !UNITY_EDITOR
-                // En iOS no podemos controlar la fuerza sin plugins, usamos el estándar
-                Handheld.Vibrate();
-        #endif
+            }
+        }
+        catch (System.Exception) { }
+#elif UNITY_IOS && !UNITY_EDITOR
+        Handheld.Vibrate();
+#endif
     }
 }
