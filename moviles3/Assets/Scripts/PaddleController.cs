@@ -124,11 +124,6 @@ public class PaddleController : MonoBehaviour
             }
         }
 
-        if (ComboEffectManager.Instance != null)
-        {
-            ComboEffectManager.Instance.RegisterHit(Vector3.zero, 0);
-        }
-
         Debug.Log("¡Agitación detectada! Usos restantes: " + currentShakes);
     }
 
