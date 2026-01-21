@@ -28,8 +28,8 @@ public class BallController : MonoBehaviour
     private float offsetZ;
 
     // Variables para el Micrófono (Soplido)
-    private AudioClip _micClip;
-    private string _deviceName;
+    //private AudioClip _micClip;
+    //private string _deviceName;
 
     void Awake()
     {
@@ -42,7 +42,7 @@ public class BallController : MonoBehaviour
         if (gameManager == null)
         {
             gameManager = GameManager.Instance;
-            if (gameManager == null) gameManager = FindObjectOfType<GameManager>();
+            if (gameManager == null) gameManager = FindFirstObjectByType<GameManager>();
         }
 
         if (rb != null)
@@ -56,19 +56,19 @@ public class BallController : MonoBehaviour
 
         if (paddle == null)
         {
-            PaddleController paddleScript = FindObjectOfType<PaddleController>();
+            PaddleController paddleScript = FindFirstObjectByType<PaddleController>();
             if (paddleScript != null) paddle = paddleScript.transform;
         }
 
         if (paddle != null) offsetZ = transform.position.z - paddle.position.z;
 
         // --- INICIALIZAR MICRÓFONO PARA SOPLIDO ---
-        if (Microphone.devices.Length > 0)
+        /*if (Microphone.devices.Length > 0)
         {
             _deviceName = Microphone.devices[0];
             // Grabación en bucle de 1 segundo a 44.1kHz
             _micClip = Microphone.Start(_deviceName, true, 1, 44100);
-        }
+        }*/
     }
 
     void Update()
@@ -89,7 +89,7 @@ public class BallController : MonoBehaviour
         else
         {
             // Solo procesamos el soplido si la bola ya ha sido lanzada
-            HandleBlowBrake();
+            //HandleBlowBrake();
         }
 
         if (rb != null && rb.linearVelocity.sqrMagnitude > 0.1f && !float.IsNaN(rb.linearVelocity.x))
@@ -108,7 +108,7 @@ public class BallController : MonoBehaviour
     }
 
     // --- NUEVA FUNCIÓN: DETECCIÓN DE SOPLIDO ---
-    void HandleBlowBrake()
+    /*void HandleBlowBrake()
     {
         if (_micClip == null) return;
 
@@ -131,7 +131,7 @@ public class BallController : MonoBehaviour
         {
             rb.linearDamping = 0f; // Vuelve a su física normal de rebote
         }
-    }
+    }*/
 
     public void LaunchBall()
     {
@@ -201,8 +201,8 @@ public class BallController : MonoBehaviour
                 return;
             }
 
-            // 2. --- NUEVO FIX: ¿ES UN PROYECTIL? ---
-            // Si es un proyectil, lo tratamos como ladrillo (PowerUps) PERO NO AVISAMOS AL GAMEMANAGER
+            // 2. ¿ES UN PROYECTIL? ---
+            // Si es un proyectil, lo tratamos como ladrillo (PowerUps)
             // para que no reste del contador de victoria.
             if (collision.gameObject.GetComponent<BossProjectile>() != null)
             {
@@ -220,7 +220,7 @@ public class BallController : MonoBehaviour
                 // Destruimos el proyectil
                 Destroy(collision.gameObject);
 
-                // IMPORTANTE: Hacemos return para NO ejecutar el BrickDestroyed de abajo
+                //Hacemos return para NO ejecutar el BrickDestroyed de abajo
                 return;
             }
             // ---------------------------------------
@@ -239,6 +239,10 @@ public class BallController : MonoBehaviour
             }
             Destroy(collision.gameObject);
         }
+
+        #if UNITY_ANDROID || UNITY_IOS
+        Handheld.Vibrate();
+        #endif
     }
 
     void ActivatePowerUp(PowerUpType type, Vector3 position)
