@@ -198,6 +198,10 @@ public class BallController : MonoBehaviour
                 if (gameManager != null) gameManager.AddScore(500);
                 if (ComboEffectManager.Instance != null)
                     ComboEffectManager.Instance.RegisterHit(collision.transform.position, 500);
+
+                #if UNITY_ANDROID || UNITY_IOS
+                        Handheld.Vibrate();
+                #endif
                 return;
             }
 
@@ -220,6 +224,10 @@ public class BallController : MonoBehaviour
                 // Destruimos el proyectil
                 Destroy(collision.gameObject);
 
+                #if UNITY_ANDROID || UNITY_IOS
+                        Handheld.Vibrate();
+                #endif
+
                 //Hacemos return para NO ejecutar el BrickDestroyed de abajo
                 return;
             }
@@ -236,13 +244,13 @@ public class BallController : MonoBehaviour
             {
                 // Este sí cuenta para ganar el nivel
                 gameManager.BrickDestroyed(collision.transform.position);
+                #if UNITY_ANDROID || UNITY_IOS
+                        Handheld.Vibrate();
+                #endif
             }
             Destroy(collision.gameObject);
         }
 
-        #if UNITY_ANDROID || UNITY_IOS
-        Handheld.Vibrate();
-        #endif
     }
 
     void ActivatePowerUp(PowerUpType type, Vector3 position)
