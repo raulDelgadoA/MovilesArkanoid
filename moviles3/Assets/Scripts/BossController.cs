@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
 
 public class BossController : MonoBehaviour
@@ -15,6 +16,10 @@ public class BossController : MonoBehaviour
     public GameObject projectilePrefab; // Arrastra aquí un prefab de una bolita roja o cubo
     public float attackRate = 2f; // Dispara cada 2 segundos
 
+    [Header("Visuales - Barra de Vida")]
+    public Slider healthSlider; // ARRASTRA AQUÍ TU SLIDER CREADO
+    public float smoothSpeed = 5f; // Velocidad de la animación de la barra
+
     [Header("Visuales")]
     public TextMeshPro hpText; // Texto encima del boss con la vida (Opcional)
     private Renderer rend;
@@ -22,16 +27,26 @@ public class BossController : MonoBehaviour
 
     private float startX;
 
+    private float targetHealthValue;
+
     void Start()
     {
         currentHealth = maxHealth;
+
+        targetHealthValue = maxHealth;
+
+        if (healthSlider != null)
+        {
+            healthSlider.maxValue = maxHealth;
+            healthSlider.value = maxHealth;
+        }
+
         startX = transform.position.x;
         rend = GetComponent<Renderer>();
         if (rend != null) baseColor = rend.material.color;
 
         UpdateUI();
 
-        // Empezar a disparar
         InvokeRepeating("ShootProjectile", 1f, attackRate);
     }
 
@@ -40,11 +55,21 @@ public class BossController : MonoBehaviour
         // Movimiento Senoidal (PingPong suave) de lado a lado
         float x = startX + Mathf.Sin(Time.time * moveSpeed) * moveRange;
         transform.position = new Vector3(x, transform.position.y, transform.position.z);
+
+        // 2. Animación Suave de la Barra de Vida (Juice Effect)
+        if (healthSlider != null)
+        {
+            // Lerp mueve el valor actual hacia el objetivo suavemente
+            healthSlider.value = Mathf.Lerp(healthSlider.value, targetHealthValue, Time.deltaTime * smoothSpeed);
+        }
     }
 
     public void TakeDamage()
     {
         currentHealth--;
+
+        // Actualizamos el objetivo de la barra (el Update se encarga de moverlo suave)
+        targetHealthValue = currentHealth;
         UpdateUI();
 
         // Feedback visual: Parpadeo rojo
