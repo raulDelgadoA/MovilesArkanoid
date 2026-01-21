@@ -122,7 +122,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 90937772447e7e349b3dd8656cda5b01, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  initialSpeed: 5
+  initialSpeed: 7
   maxSpeed: 10
   minVerticalSpeed: 2
   blowThreshold: 0.15

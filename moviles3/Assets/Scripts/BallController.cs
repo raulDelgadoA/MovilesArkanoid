@@ -156,7 +156,7 @@ public class BallController : MonoBehaviour
     public void ApplySpeedModifier(float multiplier)
     {
         initialSpeed *= multiplier;
-        initialSpeed = Mathf.Clamp(initialSpeed, 10f, 35f);
+        initialSpeed = Mathf.Clamp(initialSpeed, 3f, 10f);
     }
 
     void PreventFlatAngles()
@@ -281,14 +281,14 @@ public class BallController : MonoBehaviour
                 if (gameManager != null) gameManager.SpawnExtraBall(position);
                 break;
             case PowerUpType.SpeedUp:
-                ApplySpeedModifier(1.3f);
+                ApplySpeedModifier(1.5f);
                 break;
             case PowerUpType.SlowDown:
-                ApplySpeedModifier(0.8f);
+                ApplySpeedModifier(0.9f);
                 break;
             case PowerUpType.SafetyNet:
                 if (gameManager != null)
-                    gameManager.ActivateSafetyNet(10f);
+                    gameManager.ActivateSafetyNet(4f);
                 break;
         }
     }
