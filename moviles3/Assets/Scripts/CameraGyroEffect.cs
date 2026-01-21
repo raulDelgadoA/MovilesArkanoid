@@ -9,10 +9,6 @@ public class CameraGyroEffect : MonoBehaviour
     public float maxTiltX = 6f;
     public bool inverseX = true;
 
-    // [Header("Vertical Tilt (Pitch)")] // Ocultamos esto en el Inspector porque ya no se usa
-    // public float maxTiltY = 2f;      
-    // public bool inverseY = true;
-
     [Header("Smoothness")]
     public float rotationSpeed = 5f;
 
@@ -24,43 +20,48 @@ public class CameraGyroEffect : MonoBehaviour
 
     [HideInInspector] public Vector3 shakeOffset;
     private Quaternion initialRotation;
+    private Quaternion initialUiRotation;
 
     void Start()
     {
         initialRotation = transform.rotation;
+        if (uiContainer != null) initialUiRotation = uiContainer.localRotation;
     }
 
     void Update()
     {
         if (!enableEffect) return;
 
+        // 1. CHEQUEO DE OPCIONES
+        bool isGyroEnabled = true;
+        if (OptionsManager.Instance != null) isGyroEnabled = OptionsManager.Instance.GyroscopeEnabled;
+
+        // Si está DESACTIVADO en opciones, forzamos el retorno al centro y salimos
+        if (!isGyroEnabled)
+        {
+            transform.rotation = Quaternion.Slerp(transform.rotation, initialRotation, rotationSpeed * Time.deltaTime);
+            if (uiContainer != null)
+            {
+                uiContainer.localRotation = Quaternion.Slerp(uiContainer.localRotation, initialUiRotation, rotationSpeed * Time.deltaTime);
+            }
+            return;
+        }
+
+        // --- CÓDIGO NORMAL DE GIROSCOPIO (Solo se ejecuta si isGyroEnabled es true) ---
+
         float inputX = 0f;
-        // float inputY = 0f; // ELIMINADO: No necesitamos input vertical
 
 #if UNITY_EDITOR
         if (Screen.width <= 0 || Screen.height <= 0) return;
-
         inputX = (Input.mousePosition.x / Screen.width) * 2 - 1;
-        // inputY = (Input.mousePosition.y / Screen.height) * 2 - 1; // ELIMINADO
-
         if (float.IsNaN(inputX)) inputX = 0;
-
         inputX = Mathf.Clamp(inputX, -1f, 1f);
 #else
         inputX = Input.acceleration.x;
-        // inputY = Input.acceleration.y + 0.6f; // ELIMINADO
 #endif
 
         float rotX = inputX * maxTiltX;
-        // float rotY = inputY * maxTiltY; // ELIMINADO
-
         if (inverseX) rotX = -rotX;
-
-        // --- CAMBIO PRINCIPAL ---
-        // En Quaternion.Euler(x, y, z):
-        // x = Pitch (Vertical) -> Lo forzamos a 0
-        // y = Yaw (Giro) -> 0
-        // z = Roll (Horizontal) -> rotX
 
         // 1. CÁMARA
         Quaternion targetRotation = initialRotation * Quaternion.Euler(0, 0, rotX);
@@ -70,9 +71,6 @@ public class CameraGyroEffect : MonoBehaviour
         if (uiContainer != null)
         {
             float uiRotX = rotX * uiTiltMultiplier;
-            // float uiRotY = rotY * uiTiltMultiplier; // ELIMINADO
-
-            // Forzamos 0 en el primer parámetro para que la UI tampoco suba/baje
             Quaternion uiTarget = Quaternion.Euler(0, 0, -uiRotX);
 
             if (!IsNaN(uiTarget))
