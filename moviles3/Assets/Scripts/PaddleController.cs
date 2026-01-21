@@ -7,15 +7,15 @@ public class PaddleController : MonoBehaviour
     public float padding = 0f;
 
     [Header("Gyroscope Settings (Vertical)")]
-    public bool useGyroscope = true;
+    public bool useGyroscope = true; // Esta variable se sobrescribirá en el Start
     public float gyroSpeed = 35f;
     public float deadZone = 0.02f;
 
     [Header("Shake Ability (Habilidad Agitar)")]
-    public int maxShakes = 2;           // Límite de 2 usos por nivel
-    public float shakeCooldown = 5f;    // Cooldown de 5 segundos
-    public float shakeThreshold = 2.8f; // Sensibilidad del sacudón
-    public float upwardForce = 18f;     // Fuerza del impulso hacia arriba (Z)
+    public int maxShakes = 2;
+    public float shakeCooldown = 5f;
+    public float shakeThreshold = 2.8f;
+    public float upwardForce = 18f;
 
     private int currentShakes;
     private float lastShakeTime;
@@ -44,14 +44,18 @@ public class PaddleController : MonoBehaviour
 
     void Start()
     {
+        // --- CAMBIO PRINCIPAL: CARGAR PREFERENCIA DE USUARIO ---
+        // Leemos si el giroscopio está activado o no en las opciones (1 = True, 0 = False)
+        // Esto sobrescribe la checkbox del Inspector.
+        useGyroscope = PlayerPrefs.GetInt("Gyroscope", 1) == 1;
+        // -------------------------------------------------------
+
         mainCamera = Camera.main;
         rb = GetComponent<Rigidbody>();
         paddleHalfWidth = transform.localScale.x / 2;
 
-        // Plano para detectar toques
         movementPlane = new Plane(Vector3.back, transform.position);
 
-        // Inicializar usos de agitación
         currentShakes = maxShakes;
         UpdateShakeUI();
 
@@ -65,13 +69,16 @@ public class PaddleController : MonoBehaviour
             CalculateBounds();
         }
 
-        // INPUT TÁCTIL (El dedo siempre manda sobre el giro)
+        // INPUT TÁCTIL (Funciona siempre, tengas o no giroscopio)
         if (Application.isMobilePlatform)
             HandleTouchInput();
         else
             HandleMouseInput();
 
-        // DETECCIÓN DE AGITACIÓN (Independiente del giroscopio)
+        // DETECCIÓN DE AGITACIÓN
+        // Nota: Si quieres que la habilidad de agitar TAMBIÉN se desactive
+        // si el giroscopio está apagado, añade "&& useGyroscope" al if.
+        // Por ahora lo dejo activo porque el acelerómetro suele funcionar aunque no uses gyro para moverte.
         if (Application.isMobilePlatform)
         {
             HandleShakeDetection();
@@ -80,7 +87,11 @@ public class PaddleController : MonoBehaviour
 
     void FixedUpdate()
     {
-        // Si NO tocas la pantalla, usamos el giroscopio para movimiento suave
+        // LOGICA DE MOVIMIENTO
+        // Aquí es donde ocurre la magia:
+        // 1. Si estás arrastrando con el dedo (!isDragging), el dedo manda.
+        // 2. Si NO arrastras Y el giroscopio está activado (useGyroscope), usamos el tilt.
+        // 3. Si useGyroscope es false (por el menú), esta línea no se cumple y la pala se queda quieta esperando el dedo.
         if (!isDragging && useGyroscope && Application.isMobilePlatform)
         {
             HandlePortraitGyro();
@@ -90,12 +101,10 @@ public class PaddleController : MonoBehaviour
     // --- DETECCIÓN DE AGITACIÓN BRUSCA ---
     void HandleShakeDetection()
     {
-        // Solo procesamos si quedan usos, no estamos en cooldown y el juego sigue activo
         if (currentShakes > 0 && Time.time >= lastShakeTime + shakeCooldown)
         {
             if (GameManager.Instance != null && !GameManager.Instance.isGameOver)
             {
-                // Usamos sqrMagnitude para detectar fuerza brusca en cualquier eje
                 if (Input.acceleration.sqrMagnitude >= Mathf.Pow(shakeThreshold, 2))
                 {
                     ExecuteShakeImpulse();
@@ -110,14 +119,12 @@ public class PaddleController : MonoBehaviour
         currentShakes--;
         UpdateShakeUI();
 
-        // Impulsar todas las bolas activas hacia arriba (Eje Z)
         GameObject[] balls = GameObject.FindGameObjectsWithTag("Ball");
         foreach (GameObject ballObj in balls)
         {
             Rigidbody ballRb = ballObj.GetComponent<Rigidbody>();
             if (ballRb != null)
             {
-                // Reseteamos velocidad vertical (Z) y aplicamos el impulso
                 ballRb.linearVelocity = new Vector3(ballRb.linearVelocity.x, 0, upwardForce);
             }
         }
@@ -127,7 +134,6 @@ public class PaddleController : MonoBehaviour
 
     void UpdateShakeUI()
     {
-        // Actualizamos el contador en el GameManager
         if (GameManager.Instance != null && GameManager.Instance.shakeCounterText != null)
         {
             GameManager.Instance.shakeCounterText.text = "SHAKES: " + currentShakes;
@@ -137,7 +143,6 @@ public class PaddleController : MonoBehaviour
     // --- MOVIMIENTO GIROSCOPIO (Inclinación suave) ---
     void HandlePortraitGyro()
     {
-        // Input.acceleration.x detecta solo la inclinación lateral
         float tiltInput = Input.acceleration.x;
 
         if (Mathf.Abs(tiltInput) < deadZone)
