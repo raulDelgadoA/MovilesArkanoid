@@ -124,8 +124,6 @@ public class PaddleController : MonoBehaviour
             }
         }
 
-        // Feedback: Vibración y sacudida de cámara
-        Vibration.Vibrate(80);
         if (ComboEffectManager.Instance != null)
         {
             ComboEffectManager.Instance.RegisterHit(Vector3.zero, 0);
