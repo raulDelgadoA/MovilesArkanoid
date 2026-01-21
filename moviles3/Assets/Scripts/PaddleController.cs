@@ -7,6 +7,7 @@ public class PaddleController : MonoBehaviour
     public float padding = 0f;
 
     [Header("Gyroscope Settings (Vertical)")]
+    public bool useGyroscope = true;
     public float gyroSpeed = 35f;
     public float deadZone = 0.02f;
 
@@ -59,40 +60,18 @@ public class PaddleController : MonoBehaviour
 
     void Update()
     {
-        // En el editor recalculamos límites por si mueves las paredes
         if (Application.isEditor && !isDragging)
         {
             CalculateBounds();
         }
 
-        // --- LÓGICA DE CONTROL (Check Options) ---
-        bool isGyroEnabled = false;
-        if (OptionsManager.Instance != null)
-        {
-            isGyroEnabled = OptionsManager.Instance.GyroscopeEnabled;
-        }
-
-        if (isGyroEnabled)
-        {
-            // MODO GIROSCOPIO ACTIVADO:
-            // 1. Si estábamos arrastrando, soltamos inmediatamente
-            if (isDragging) EndDrag();
-
-            // 2. NO llamamos a HandleTouchInput ni HandleMouseInput
-            // (El movimiento se gestiona en FixedUpdate)
-        }
+        // INPUT TÁCTIL (El dedo siempre manda sobre el giro)
+        if (Application.isMobilePlatform)
+            HandleTouchInput();
         else
-        {
-            // MODO GIROSCOPIO DESACTIVADO (Solo Dedo):
-            if (Application.isMobilePlatform)
-                HandleTouchInput();
-            else
-                HandleMouseInput();
-        }
+            HandleMouseInput();
 
-        // --- DETECCIÓN DE AGITACIÓN (SHAKE) ---
-        // Esto lo dejamos activo siempre porque es una habilidad (PowerUp),
-        // no un control de movimiento.
+        // DETECCIÓN DE AGITACIÓN (Independiente del giroscopio)
         if (Application.isMobilePlatform)
         {
             HandleShakeDetection();
@@ -101,28 +80,10 @@ public class PaddleController : MonoBehaviour
 
     void FixedUpdate()
     {
-        bool isGyroEnabled = false;
-        if (OptionsManager.Instance != null) isGyroEnabled = OptionsManager.Instance.GyroscopeEnabled;
-
-        // LÓGICA DE MOVIMIENTO FÍSICO
-        if (isGyroEnabled && Application.isMobilePlatform)
+        // Si NO tocas la pantalla, usamos el giroscopio para movimiento suave
+        if (!isDragging && useGyroscope && Application.isMobilePlatform)
         {
-            // Si el gyro está activado, movemos la pala con acelerómetro
             HandlePortraitGyro();
-        }
-        else
-        {
-            // Si el gyro está desactivado...
-            if (!isDragging)
-            {
-                // ...y NO estamos arrastrando con el dedo, frenamos la pala en seco.
-                // Esto evita que siga resbalando si cambiaste de modo o soltaste el dedo.
-                if (rb.linearVelocity.sqrMagnitude > 0)
-                {
-                    rb.linearVelocity = Vector3.zero;
-                }
-            }
-            // Si isDragging es true, el método UpdateDrag ya mueve el Rigidbody.
         }
     }
 
@@ -194,7 +155,7 @@ public class PaddleController : MonoBehaviour
         rb.MovePosition(targetPos);
     }
 
-    // --- LOGICA DE ARRASTRE TÁCTIL (Touch & Mouse) ---
+    // --- RESTO DE MÉTODOS (Táctil y cálculos) ---
     void StartDrag(Vector2 screenPosition, int fingerId)
     {
         float worldX = GetWorldXFromScreen(screenPosition);
@@ -226,7 +187,6 @@ public class PaddleController : MonoBehaviour
         rb.linearVelocity = Vector3.zero;
     }
 
-    // --- CÁLCULOS MATEMÁTICOS ---
     void CalculateBounds()
     {
         if (leftWall != null && rightWall != null)
@@ -250,7 +210,6 @@ public class PaddleController : MonoBehaviour
         return float.NaN;
     }
 
-    // --- INPUT HANDLERS ---
     void HandleTouchInput()
     {
         if (Input.touchCount > 0)
