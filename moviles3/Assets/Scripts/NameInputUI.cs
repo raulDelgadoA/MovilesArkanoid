@@ -36,7 +36,7 @@ public class NameInputUI : MonoBehaviour
     {
         string playerName = nameInputField.text.ToUpper(); // Forzamos mayúsculas tipo Arcade
 
-        if (string.IsNullOrEmpty(playerName)) playerName = "NOONE"; // Por si acaso
+        if (string.IsNullOrEmpty(playerName)) playerName = "?????"; // Por si acaso
 
         // 1. Guardamos el dato real
         RankingManager.Instance.AddScore(pendingLevelID, playerName, pendingScore);
