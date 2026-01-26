@@ -1763,6 +1763,7 @@ MonoBehaviour:
   comboResetTime: 1.5
   hueSpeed: 100
   shakeIntensity: 0.03
+  feverScoreMultiplier: 0.5
   maxTextScale: 2.5
   scalePerHit: 0.2
   baseVibration: 20
@@ -2218,7 +2219,7 @@ MonoBehaviour:
   m_Colors:
     m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
     m_HighlightedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
-    m_PressedColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 1}
+    m_PressedColor: {r: 0.54901963, g: 0.54901963, b: 0.54901963, a: 1}
     m_SelectedColor: {r: 0.9607843, g: 0.9607843, b: 0.9607843, a: 1}
     m_DisabledColor: {r: 0.78431374, g: 0.78431374, b: 0.78431374, a: 0.5019608}
     m_ColorMultiplier: 1
@@ -2235,7 +2236,7 @@ MonoBehaviour:
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
   m_Interactable: 1
-  m_TargetGraphic: {fileID: 1501824649}
+  m_TargetGraphic: {fileID: 558237586}
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
